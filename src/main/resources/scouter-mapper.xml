@@ -1,0 +1,2574 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="Scouter">
+
+    <parameterMap type="java.util.HashMap" id="ymd">
+        <parameter property="object_hash" javaType="int" />
+        <parameter property="year" javaType="String"/>
+        <parameter property="month" javaType="String"/>
+        <parameter property="date" javaType="String"/>
+        <parameter property="app_id" javaType="String"/>
+        <parameter property="service_hash" javaType="int"/>
+    </parameterMap>
+    
+    <update id="dropAgentInfo">
+        DROP TABLE AGENT_INFO_TBL
+    </update>
+    
+    <update id="dropSqlInfo">
+        DROP TABLE SQL_INFO_TBL
+    </update>
+    
+    <update id="dropJavaAgent" parameterType="String">
+        DROP TABLE JAVA_AGENT_5M_${value}
+    </update>
+    
+    <update id="dropHostAgent" parameterType="String">
+        DROP TABLE HOST_AGENT_5M_${value}
+    </update>
+    
+    <update id="dropService" parameterType="String">
+        DROP TABLE SERVICE_5M_${value}
+    </update>
+    
+    <update id="dropIpAddress" parameterType="String">
+        DROP TABLE IP_ADDRESS_5M_${value}
+    </update>
+    
+    <update id="dropUserAgent" parameterType="String">
+        DROP TABLE USER_AGENT_5M_${value}
+    </update>
+    
+    <update id="dropSql" parameterType="String">
+        DROP TABLE SQL_5M_${value}
+    </update>
+    
+    <update id="dropAlert" parameterType="String">
+        DROP TABLE ALERT_${value}
+    </update>
+    
+    <update id="createAgentInfo">
+        CREATE TABLE AGENT_INFO_TBL (
+			OBJECT_HASH INTEGER NOT NULL,
+			OBJECT_NAME VARCHAR(100) NOT NULL,
+			OBJECT_FAMILY VARCHAR(20),
+			OBJECT_TYPE VARCHAR(20),
+			IP_ADDRESS VARCHAR(15) NOT NULL,
+			LAST_UP_TIME TIMESTAMP,
+			LAST_DOWN_TIME TIMESTAMP,
+			PRIMARY KEY (OBJECT_HASH)
+		)
+    </update>
+    
+    <update id="createSqlInfo">
+        CREATE TABLE SQL_INFO_TBL (
+            SQL_HASH INTEGER NOT NULL,
+            SQL_STR VARCHAR(4096),
+            PRIMARY KEY (SQL_HASH)
+        )
+    </update>
+    
+    <update id="createHostAgent" parameterType="String" >
+        CREATE TABLE HOST_AGENT_5M_${value} (
+			OBJECT_HASH INTEGER REFERENCES AGENT_INFO_TBL(OBJECT_HASH) NOT NULL,
+            LOG_DT DATE NOT NULL,
+			LOG_TM TIME NOT NULL,
+			CPU_AVG FLOAT,
+			CPU_MAX FLOAT,
+            MEM_TOTAL INTEGER,
+			MEM_AVG FLOAT,
+			MEM_MAX FLOAT,
+			MEM_U_AVG INTEGER,
+			MEM_U_MAX INTEGER,
+			NET_TX_AVG INTEGER,
+			NET_TX_MAX INTEGER,
+            NET_RX_AVG INTEGER,
+            NET_RX_MAX INTEGER,
+			DISK_R_AVG INTEGER,
+			DISK_R_MAX INTEGER,
+			DISK_W_AVG INTEGER,
+			DISK_W_MAX INTEGER,
+			PRIMARY KEY (OBJECT_HASH, LOG_DT, LOG_TM)
+        )
+    </update>
+    
+    <update id="createJavaAgent" parameterType="String">
+        CREATE TABLE JAVA_AGENT_5M_${value} (
+			OBJECT_HASH INTEGER REFERENCES AGENT_INFO_TBL(OBJECT_HASH) NOT NULL,
+            LOG_DT DATE NOT NULL,
+			LOG_TM TIME NOT NULL,
+			ACTIVE_SERVICE_AVG INTEGER,
+			ACTIVE_SERVICE_MAX INTEGER,
+			HEAP_TOTAL FLOAT,
+			HEAP_USED_AVG FLOAT,
+			HEAP_USED_MAX FLOAT,
+			RECENT_USER_AVG INTEGER,
+			RECENT_USER_MAX INTEGER,
+			SERVICE_COUNT_AVG INTEGER,
+			SERVICE_COUNT_MAX INTEGER,
+            API_TPS_AVG FLOAT,
+            API_TPS_MAX FLOAT,
+			SQL_TPS_AVG FLOAT,
+			SQL_TPS_MAX FLOAT,
+			TPS_AVG FLOAT,
+			TPS_MAX FLOAT,
+			PRIMARY KEY (OBJECT_HASH, LOG_DT, LOG_TM)
+		)
+    </update>
+    
+    <update id="createService" parameterType="String">
+        CREATE TABLE SERVICE_5M_${value} (
+            OBJECT_HASH INTEGER REFERENCES AGENT_INFO_TBL(OBJECT_HASH) NOT NULL,
+            SERVICE_HASH INTEGER NOT NULL,
+            LOG_DT DATE NOT NULL,
+			LOG_TM TIME NOT NULL,
+            SERVICE_NAME VARCHAR(256),
+			ELAPSED_AVG INTEGER,
+			ELAPSED_MAX INTEGER,
+			SQL_COUNT_AVG INTEGER,
+			SQL_COUNT_MAX INTEGER,
+			SQL_TIME_AVG INTEGER,
+			SQL_TIME_MAX INTEGER,
+			REQUEST_COUNT INTEGER,
+			ERROR_COUNT INTEGER,
+			ELAPSED_EXCEED_COUNT INTEGER,
+			PRIMARY KEY (OBJECT_HASH, SERVICE_HASH, LOG_DT, LOG_TM)
+		)
+    </update>
+    
+    <update id="createIpAddress" parameterType="String">
+        CREATE TABLE IP_ADDRESS_5M_${value} (
+            OBJECT_HASH INTEGER NOT NULL,
+            SERVICE_HASH INTEGER NOT NULL,
+            LOG_DT DATE NOT NULL,
+            LOG_TM TIME NOT NULL,
+            IP_ADDRESS VARCHAR(15) NOT NULL,
+            REQUEST_COUNT INTEGER,
+            ERROR_COUNT INTEGER,
+            PRIMARY KEY (OBJECT_HASH, SERVICE_HASH, LOG_DT, LOG_TM, IP_ADDRESS)
+        )
+    </update>
+    
+    <update id="alterIpAddress" parameterType="String">
+        ALTER TABLE IP_ADDRESS_5M_${value}
+		  ADD FOREIGN KEY (OBJECT_HASH, SERVICE_HASH, LOG_DT, LOG_TM) 
+		  REFERENCES SERVICE_5M_${value}(OBJECT_HASH, SERVICE_HASH, LOG_DT, LOG_TM)
+    </update>
+    
+    <update id="createUserAgent" parameterType="String">
+        CREATE TABLE USER_AGENT_5M_${value} (
+            OBJECT_HASH INTEGER NOT NULL,
+            SERVICE_HASH INTEGER NOT NULL,
+            LOG_DT DATE NOT NULL,
+            LOG_TM TIME NOT NULL,
+            USER_AGENT VARCHAR(512) NOT NULL,
+            REQUEST_COUNT INTEGER,
+            ERROR_COUNT INTEGER,
+            PRIMARY KEY (OBJECT_HASH, SERVICE_HASH, LOG_DT, LOG_TM, USER_AGENT)
+        )
+    </update>
+    
+    <update id="alterUserAgent" parameterType="String">
+        ALTER TABLE USER_AGENT_5M_${value}
+          ADD FOREIGN KEY (OBJECT_HASH, SERVICE_HASH, LOG_DT, LOG_TM) 
+          REFERENCES SERVICE_5M_${value}(OBJECT_HASH, SERVICE_HASH, LOG_DT, LOG_TM)
+    </update>
+    
+    <update id="createSql" parameterType="String">
+        CREATE TABLE SQL_5M_${value} (
+            OBJECT_HASH INTEGER REFERENCES AGENT_INFO_TBL(OBJECT_HASH) NOT NULL,
+            SQL_HASH INTEGER REFERENCES SQL_INFO_TBL(SQL_HASH) NOT NULL,
+            LOG_DT DATE NOT NULL,
+            LOG_TM TIME NOT NULL,
+            EXECUTE_COUNT INTEGER,
+            ERROR_COUNT INTEGER,
+            ELAPSED INTEGER,
+            PRIMARY KEY (OBJECT_HASH, SQL_HASH, LOG_DT, LOG_TM)
+        )
+    </update>
+    
+    <update id="createAlert" parameterType="String">
+        CREATE TABLE ALERT_${value} (
+            OBJECT_HASH INTEGER REFERENCES AGENT_INFO_TBL(OBJECT_HASH) NOT NULL,
+            LOG_DT DATE NOT NULL,
+            LOG_TM TIME NOT NULL,
+            LEVEL VARCHAR(10),
+            TITLE VARCHAR(50),
+            MESSAGE VARCHAR(256),
+            PRIMARY KEY (OBJECT_HASH, LOG_DT, LOG_TM)
+        )
+    </update>
+    
+    <insert id="insertAgentInfo" parameterType="scouter.plugin.server.reporting.vo.AgentInfo">
+        INSERT INTO AGENT_INFO_TBL 
+               (OBJECT_HASH, 
+                OBJECT_NAME, 
+                OBJECT_FAMILY, 
+                OBJECT_TYPE, 
+                IP_ADDRESS, 
+                LAST_UP_TIME, 
+                LAST_DOWN_TIME)
+        VALUES (#{object_hash}, 
+                #{object_name, jdbcType=VARCHAR}, 
+                #{object_family, jdbcType=VARCHAR}, 
+                #{object_type, jdbcType=VARCHAR}, 
+                #{ip_address, jdbcType=VARCHAR}, 
+                #{last_up_time, jdbcType=TIMESTAMP}, 
+                #{last_down_time, jdbcType=TIMESTAMP})
+    </insert>
+    
+    <insert id="insertSqlInfo" parameterType="scouter.plugin.server.reporting.vo.SqlInfo">
+        INSERT INTO SQL_INFO_TBL 
+               (SQL_HASH, 
+                SQL_STR)
+        VALUES (#{sql_hash}, 
+                #{sql_str, jdbcType=VARCHAR})
+    </insert>
+    
+    <insert id="insertHostAgent" parameterType="scouter.plugin.server.reporting.vo.HostAgent">
+        INSERT INTO HOST_AGENT_5M_${date}
+               (OBJECT_HASH, 
+                LOG_DT, 
+                LOG_TM, 
+                CPU_AVG, 
+                CPU_MAX, 
+                MEM_TOTAL, 
+                MEM_AVG, 
+                MEM_MAX, 
+                MEM_U_AVG, 
+                MEM_U_MAX, 
+                NET_TX_AVG, 
+                NET_TX_MAX, 
+                NET_RX_AVG, 
+                NET_RX_MAX, 
+                DISK_R_AVG, 
+                DISK_R_MAX, 
+                DISK_W_AVG, 
+                DISK_W_MAX)
+        VALUES (#{object_hash}, 
+                #{log_dt}, 
+                #{log_tm}, 
+                #{cpu_avg, jdbcType=FLOAT}, 
+                #{cpu_max, jdbcType=FLOAT}, 
+                #{mem_total, jdbcType=INTEGER}, 
+                #{mem_avg, jdbcType=FLOAT}, 
+                #{mem_max, jdbcType=FLOAT}, 
+                #{mem_u_avg, jdbcType=INTEGER}, 
+                #{mem_u_max, jdbcType=INTEGER}, 
+                #{net_tx_avg, jdbcType=INTEGER}, 
+                #{net_tx_max, jdbcType=INTEGER}, 
+                #{net_rx_avg, jdbcType=INTEGER}, 
+                #{net_rx_max, jdbcType=INTEGER}, 
+                #{disk_r_avg, jdbcType=INTEGER}, 
+                #{disk_r_max, jdbcType=INTEGER}, 
+                #{disk_w_avg, jdbcType=INTEGER}, 
+                #{disk_w_max, jdbcType=INTEGER})
+    </insert>
+    
+    <insert id="insertJavaAgent" parameterType="scouter.plugin.server.reporting.vo.JavaAgent">
+        INSERT INTO JAVA_AGENT_5M_${date}
+               (OBJECT_HASH, 
+                LOG_DT, 
+                LOG_TM, 
+                ACTIVE_SERVICE_AVG, 
+                ACTIVE_SERVICE_MAX, 
+                HEAP_TOTAL, 
+                HEAP_USED_AVG, 
+                HEAP_USED_MAX, 
+                RECENT_USER_AVG, 
+                RECENT_USER_MAX, 
+                SERVICE_COUNT_AVG, 
+                SERVICE_COUNT_MAX, 
+	            API_TPS_AVG,
+	            API_TPS_MAX,
+                SQL_TPS_AVG, 
+                SQL_TPS_MAX, 
+                TPS_AVG, TPS_MAX)
+        VALUES (#{object_hash}, 
+                #{log_dt}, 
+                #{log_tm}, 
+                #{active_service_avg, jdbcType=INTEGER}, 
+                #{active_service_max, jdbcType=INTEGER}, 
+                #{heap_total, jdbcType=FLOAT}, 
+                #{heap_used_avg, jdbcType=FLOAT}, 
+                #{heap_used_max, jdbcType=FLOAT}, 
+                #{recent_user_avg, jdbcType=INTEGER}, 
+                #{recent_user_max, jdbcType=INTEGER}, 
+                #{service_count_avg, jdbcType=INTEGER}, 
+                #{service_count_max, jdbcType=INTEGER}, 
+                #{api_tps_avg, jdbcType=FLOAT}, 
+                #{api_tps_max, jdbcType=FLOAT}, 
+                #{sql_tps_avg, jdbcType=FLOAT}, 
+                #{sql_tps_max, jdbcType=FLOAT}, 
+                #{tps_avg, jdbcType=FLOAT}, 
+                #{tps_max, jdbcType=FLOAT})
+    </insert>
+    
+    <insert id="insertService" parameterType="scouter.plugin.server.reporting.vo.Service">
+        INSERT INTO SERVICE_5M_${date}
+               (OBJECT_HASH, 
+                SERVICE_HASH, 
+                LOG_DT, 
+                LOG_TM, 
+                SERVICE_NAME, 
+                ELAPSED_AVG, 
+                ELAPSED_MAX, 
+                SQL_COUNT_AVG, 
+                SQL_COUNT_MAX, 
+                SQL_TIME_AVG, 
+                SQL_TIME_MAX, 
+                REQUEST_COUNT, 
+                ERROR_COUNT, 
+                ELAPSED_EXCEED_COUNT)
+        VALUES (#{object_hash}, 
+                #{service_hash}, 
+                #{log_dt}, 
+                #{log_tm}, 
+                #{service_name, jdbcType=VARCHAR}, 
+                #{elapsed_avg, jdbcType=INTEGER}, 
+                #{elapsed_max, jdbcType=INTEGER}, 
+                #{sql_count_avg, jdbcType=INTEGER}, 
+                #{sql_count_max, jdbcType=INTEGER}, 
+                #{sql_time_avg, jdbcType=INTEGER}, 
+                #{sql_time_max, jdbcType=INTEGER}, 
+                #{request_count, jdbcType=INTEGER}, 
+                #{error_count, jdbcType=INTEGER}, 
+                #{elapsed_exceed_count, jdbcType=INTEGER})
+    </insert>
+    
+    <insert id="insertIpAddress" parameterType="scouter.plugin.server.reporting.vo.Service">
+        INSERT INTO IP_ADDRESS_5M_${date}
+               (OBJECT_HASH, 
+                SERVICE_HASH, 
+                LOG_DT, 
+                LOG_TM, 
+                IP_ADDRESS, 
+                REQUEST_COUNT, 
+                ERROR_COUNT)
+        VALUES
+        <foreach collection="ipAddressList" item="ipAddr" separator=" , ">
+            (#{object_hash}, 
+             #{service_hash}, 
+             #{log_dt}, 
+             #{log_tm}, 
+             #{ipAddr.ip_address}, 
+             #{ipAddr.request_count, jdbcType=INTEGER}, 
+             #{ipAddr.error_count, jdbcType=INTEGER})
+        </foreach>
+    </insert>
+    
+    <insert id="insertUserAgent" parameterType="scouter.plugin.server.reporting.vo.Service">
+        INSERT INTO USER_AGENT_5M_${date}
+               (OBJECT_HASH, 
+                SERVICE_HASH, 
+                LOG_DT, 
+                LOG_TM, 
+                USER_AGENT, 
+                REQUEST_COUNT, 
+                ERROR_COUNT)
+        VALUES
+        <foreach collection="userAgentList" item="userAgent" separator=" , ">
+            (#{object_hash}, 
+             #{service_hash}, 
+             #{log_dt}, 
+             #{log_tm}, 
+             #{userAgent.user_agent}, 
+             #{userAgent.request_count, jdbcType=INTEGER}, 
+             #{userAgent.error_count, jdbcType=INTEGER})
+        </foreach>
+    </insert>
+    
+    <insert id="insertSql" parameterType="scouter.plugin.server.reporting.vo.Sql">
+        INSERT INTO SQL_5M_${date}
+               (OBJECT_HASH, 
+                SQL_HASH, 
+                LOG_DT, 
+                LOG_TM, 
+                EXECUTE_COUNT, 
+                ERROR_COUNT, 
+                ELAPSED)
+        VALUES (#{object_hash}, 
+                #{sql_hash}, 
+                #{log_dt}, 
+                #{log_tm}, 
+                #{execute_count, jdbcType=INTEGER}, 
+                #{error_count, jdbcType=INTEGER}, 
+                #{elapsed, jdbcType=INTEGER})
+    </insert>
+    
+    <insert id="insertAlert" parameterType="scouter.plugin.server.reporting.vo.Alert">
+        INSERT INTO ALERT_${date}
+               (OBJECT_HASH, 
+                LOG_DT, 
+                LOG_TM, 
+                LEVEL, 
+                TITLE, 
+                MESSAGE)
+        VALUES (#{object_hash},
+                #{log_dt}, 
+                #{log_tm}, 
+                #{level, jdbcType=VARCHAR}, 
+                #{title, jdbcType=VARCHAR}, 
+                #{message, jdbcType=VARCHAR})
+    </insert>
+    
+    <select id="selectAgentInfo" parameterType="int" resultType="scouter.plugin.server.reporting.vo.AgentInfo">
+        SELECT OBJECT_HASH,
+			   OBJECT_NAME,
+			   OBJECT_FAMILY,
+			   OBJECT_TYPE,
+			   IP_ADDRESS,
+			   LAST_UP_TIME,
+			   LAST_DOWN_TIME
+	      FROM AGENT_INFO_TBL
+	     WHERE OBJECT_HASH = #{object_hash}
+    </select>
+    
+    <select id="selectSqlInfo" parameterType="int" resultType="scouter.plugin.server.reporting.vo.SqlInfo">
+        SELECT SQL_HASH,
+               SQL_STR
+          FROM SQL_INFO_TBL
+         WHERE SQL_HASH = #{sql_hash}
+    </select>
+    
+    <update id="updateAgentInfo" parameterType="scouter.plugin.server.reporting.vo.AgentInfo">
+        UPDATE AGENT_INFO_TBL
+           SET OBJECT_NAME = #{object_name}
+           <if test="object_family != null">, OBJECT_FAMILY = #{object_family}</if>
+           <if test="object_type != null">, OBJECT_TYPE = #{object_type}</if>
+           <if test="ip_address != null">, IP_ADDRESS = #{ip_address}</if>
+           <if test="last_up_time != null">, LAST_UP_TIME = #{last_up_time}</if>
+           <if test="last_down_time != null">, LAST_DOWN_TIME = #{last_down_time}</if>
+         WHERE OBJECT_HASH = #{object_hash}         
+    </update>
+    
+    <update id="updateSqlInfo" parameterType="scouter.plugin.server.reporting.vo.SqlInfo">
+        UPDATE SQL_INFO_TBL
+           SET SQL_STR = #{sql_str}
+         WHERE SQL_HASH = #{sql_hash}         
+    </update>
+    
+    <select id="selectAgentInfoList" resultType="scouter.plugin.server.reporting.vo.AgentInfo">
+        SELECT OBJECT_HASH,
+               OBJECT_NAME,
+               OBJECT_FAMILY,
+               OBJECT_TYPE,
+               IP_ADDRESS,
+               LAST_UP_TIME,
+               LAST_DOWN_TIME
+          FROM AGENT_INFO_TBL
+         ORDER BY OBJECT_NAME
+    </select>
+    
+    <select id="selectHostDailyStat" parameterMap="ymd" resultType="scouter.plugin.server.reporting.vo.HostAgent">
+        SELECT (SELECT OBJECT_NAME FROM AGENT_INFO_TBL WHERE OBJECT_HASH = #{object_hash}) AS OBJECT_NAME
+               , CASE WHEN MAX(LOG_DT) IS NULL THEN '${year}-${month}-${date}' ELSE MAX(LOG_DT) END AS DAY
+               , AVG(CPU_AVG) AS CPU_AVG
+               , MAX(CPU_MAX) AS CPU_MAX
+               , MAX(MEM_TOTAL) AS MEM_TOTAL
+               , AVG(MEM_AVG) AS MEM_AVG
+               , MAX(MEM_MAX) AS MEM_MAX
+               , AVG(MEM_U_AVG) AS MEM_U_AVG
+               , MAX(MEM_U_MAX) AS MEM_U_MAX 
+               , AVG(NET_TX_AVG) AS NET_TX_AVG
+               , MAX(NET_TX_MAX) AS NET_TX_MAX
+               , AVG(NET_RX_AVG) AS NET_RX_AVG
+               , MAX(NET_RX_MAX) AS NET_RX_MAX
+               , AVG(DISK_R_AVG) AS DISK_R_AVG
+               , MAX(DISK_R_MAX) AS DISK_R_MAX
+               , AVG(DISK_W_AVG) AS DISK_W_AVG
+               , MAX(DISK_W_MAX) AS DISK_W_MAX 
+          FROM HOST_AGENT_5M_${date}
+         WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
+           AND OBJECT_HASH = #{object_hash}
+    </select>
+    
+    <select id="selectJavaDailyStat" parameterMap="ymd" resultType="scouter.plugin.server.reporting.vo.JavaAgent">
+        SELECT (SELECT OBJECT_NAME FROM AGENT_INFO_TBL WHERE OBJECT_HASH = #{object_hash}) AS OBJECT_NAME
+               , CASE WHEN MAX(LOG_DT) IS NULL THEN '${year}-${month}-${date}' ELSE MAX(LOG_DT) END AS DAY
+               , AVG(ACTIVE_SERVICE_AVG) AS ACTIVE_SERVICE_AVG
+               , MAX(ACTIVE_SERVICE_MAX) AS ACTIVE_SERVICE_MAX
+               , MAX(HEAP_TOTAL) AS HEAP_TOTAL
+               , AVG(HEAP_USED_AVG) AS HEAP_USED_AVG
+               , MAX(HEAP_USED_MAX) AS HEAP_USED_MAX
+               , AVG(RECENT_USER_AVG) AS RECENT_USER_AVG
+               , MAX(RECENT_USER_MAX) AS RECENT_USER_MAX 
+               , AVG(SERVICE_COUNT_AVG) AS SERVICE_COUNT_AVG
+               , MAX(SERVICE_COUNT_MAX) AS SERVICE_COUNT_MAX
+               , AVG(API_TPS_AVG) AS API_TPS_AVG
+               , MAX(API_TPS_MAX) AS API_TPS_MAX
+               , AVG(SQL_TPS_AVG) AS SQL_TPS_AVG
+               , MAX(SQL_TPS_MAX) AS SQL_TPS_MAX
+               , AVG(TPS_AVG) AS TPS_AVG
+               , MAX(TPS_MAX) AS TPS_MAX 
+          FROM JAVA_AGENT_5M_${date}
+         WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
+           AND OBJECT_HASH = #{object_hash}
+    </select>
+    
+    <select id="selectServiceDailyStat" parameterMap="ymd" resultType="scouter.plugin.server.reporting.vo.Service">
+        SELECT A.DAY
+               , A.APP_ID
+               , A.SERVICE_HASH
+               , A.SERVICE_NAME
+               , A.ELAPSED_AVG
+               , A.ELAPSED_MAX
+               , A.SQL_COUNT_AVG
+               , A.SQL_COUNT_MAX
+               , A.SQL_TIME_AVG
+               , A.SQL_TIME_MAX
+               , A.REQUEST_COUNT
+               , A.ERROR_COUNT
+               , A.ELAPSED_EXCEED_COUNT
+               , (SELECT COUNT(DISTINCT(B.IP_ADDRESS)) 
+                    FROM IP_ADDRESS_5M_${date} B 
+                   WHERE A.SERVICE_HASH = B.SERVICE_HASH 
+                     AND A.LOG_DT = B.LOG_DT) AS IP_COUNT
+               , (SELECT COUNT(DISTINCT(B.USER_AGENT)) 
+                    FROM USER_AGENT_5M_${date} B 
+                   WHERE A.SERVICE_HASH = B.SERVICE_HASH 
+                     AND A.LOG_DT = B.LOG_DT) AS UA_COUNT
+          FROM (SELECT CASE WHEN MAX(LOG_DT) IS NULL THEN '${year}-${month}-${date}' ELSE MAX(LOG_DT) END AS DAY
+                       , MAX(LOG_DT) AS LOG_DT
+                       , SERVICE_HASH
+                       , SUBSTR(MAX(OBJECT_NAME)
+                                , LOCATE('/', MAX(OBJECT_NAME), 2) + 1
+                                , ((LOCATE('-', MAX(OBJECT_NAME), LOCATE('/', MAX(OBJECT_NAME), 2) + 1) + 1) - (LOCATE('/', MAX(OBJECT_NAME), 2) + 1) - 1)) AS APP_ID
+                       , MAX(SERVICE_NAME) AS SERVICE_NAME
+                       , AVG(ELAPSED_AVG) AS ELAPSED_AVG
+                       , MAX(ELAPSED_MAX) AS ELAPSED_MAX
+                       , AVG(SQL_COUNT_AVG) AS SQL_COUNT_AVG
+                       , MAX(SQL_COUNT_MAX) AS SQL_COUNT_MAX
+                       , AVG(SQL_TIME_AVG) AS SQL_TIME_AVG
+                       , MAX(SQL_TIME_MAX) AS SQL_TIME_MAX 
+                       , SUM(REQUEST_COUNT) AS REQUEST_COUNT
+                       , SUM(ERROR_COUNT) AS ERROR_COUNT
+                       , SUM(ELAPSED_EXCEED_COUNT) AS ELAPSED_EXCEED_COUNT
+                  FROM SERVICE_5M_${date} A JOIN AGENT_INFO_TBL B
+                    ON A.OBJECT_HASH = B.OBJECT_HASH
+                 WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
+                 GROUP BY OBJECT_NAME, SERVICE_HASH
+                 ORDER BY REQUEST_COUNT DESC) A
+    </select>
+    
+    <select id="selectServiceMonthSummary" parameterMap="ymd" resultType="scouter.plugin.server.reporting.vo.Service">
+		SELECT '${year}-${month}' AS DAY
+		       , APP_ID
+		       , SERVICE_HASH
+		       , MAX(SERVICE_NAME) AS SERVICE_NAME
+		       , AVG(ELAPSED_AVG) AS ELAPSED_AVG
+		       , MAX(ELAPSED_MAX) AS ELAPSED_MAX
+		       , AVG(SQL_COUNT_AVG) AS SQL_COUNT_AVG
+		       , MAX(SQL_COUNT_MAX) AS SQL_COUNT_MAX
+		       , AVG(SQL_TIME_AVG) AS SQL_TIME_AVG
+		       , MAX(SQL_TIME_MAX) AS SQL_TIME_MAX 
+		       , SUM(REQUEST_COUNT) AS REQUEST_COUNT
+		       , SUM(ERROR_COUNT) AS ERROR_COUNT
+		       , SUM(ELAPSED_EXCEED_COUNT) AS ELAPSED_EXCEED_COUNT 
+		  FROM (SELECT SERVICE_HASH
+		               , SUBSTR(MAX(OBJECT_NAME)
+		                        , LOCATE('/', MAX(OBJECT_NAME), 2) + 1
+		                        , ((LOCATE('-', MAX(OBJECT_NAME), LOCATE('/', MAX(OBJECT_NAME), 2) + 1) + 1) - (LOCATE('/', MAX(OBJECT_NAME), 2) + 1) - 1)) AS APP_ID
+		               , MAX(SERVICE_NAME) AS SERVICE_NAME
+		               , AVG(ELAPSED_AVG) AS ELAPSED_AVG
+		               , MAX(ELAPSED_MAX) AS ELAPSED_MAX
+		               , AVG(SQL_COUNT_AVG) AS SQL_COUNT_AVG
+		               , MAX(SQL_COUNT_MAX) AS SQL_COUNT_MAX
+		               , AVG(SQL_TIME_AVG) AS SQL_TIME_AVG
+		               , MAX(SQL_TIME_MAX) AS SQL_TIME_MAX 
+		               , SUM(REQUEST_COUNT) AS REQUEST_COUNT
+		               , SUM(ERROR_COUNT) AS ERROR_COUNT
+		               , SUM(ELAPSED_EXCEED_COUNT) AS ELAPSED_EXCEED_COUNT
+		          FROM SERVICE_5M_01 A JOIN AGENT_INFO_TBL B
+		            ON A.OBJECT_HASH = B.OBJECT_HASH
+		         WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
+		         GROUP BY OBJECT_NAME, SERVICE_HASH
+		         UNION
+		        SELECT SERVICE_HASH
+		               , SUBSTR(MAX(OBJECT_NAME)
+		                        , LOCATE('/', MAX(OBJECT_NAME), 2) + 1
+		                        , ((LOCATE('-', MAX(OBJECT_NAME), LOCATE('/', MAX(OBJECT_NAME), 2) + 1) + 1) - (LOCATE('/', MAX(OBJECT_NAME), 2) + 1) - 1)) AS APP_ID
+		               , MAX(SERVICE_NAME) AS SERVICE_NAME
+		               , AVG(ELAPSED_AVG) AS ELAPSED_AVG
+		               , MAX(ELAPSED_MAX) AS ELAPSED_MAX
+		               , AVG(SQL_COUNT_AVG) AS SQL_COUNT_AVG
+		               , MAX(SQL_COUNT_MAX) AS SQL_COUNT_MAX
+		               , AVG(SQL_TIME_AVG) AS SQL_TIME_AVG
+		               , MAX(SQL_TIME_MAX) AS SQL_TIME_MAX 
+		               , SUM(REQUEST_COUNT) AS REQUEST_COUNT
+		               , SUM(ERROR_COUNT) AS ERROR_COUNT
+		               , SUM(ELAPSED_EXCEED_COUNT) AS ELAPSED_EXCEED_COUNT
+		          FROM SERVICE_5M_02 A JOIN AGENT_INFO_TBL B
+		            ON A.OBJECT_HASH = B.OBJECT_HASH
+		         WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
+		         GROUP BY OBJECT_NAME, SERVICE_HASH
+		         UNION
+		        SELECT SERVICE_HASH
+		               , SUBSTR(MAX(OBJECT_NAME)
+		                        , LOCATE('/', MAX(OBJECT_NAME), 2) + 1
+		                        , ((LOCATE('-', MAX(OBJECT_NAME), LOCATE('/', MAX(OBJECT_NAME), 2) + 1) + 1) - (LOCATE('/', MAX(OBJECT_NAME), 2) + 1) - 1)) AS APP_ID
+		               , MAX(SERVICE_NAME) AS SERVICE_NAME
+		               , AVG(ELAPSED_AVG) AS ELAPSED_AVG
+		               , MAX(ELAPSED_MAX) AS ELAPSED_MAX
+		               , AVG(SQL_COUNT_AVG) AS SQL_COUNT_AVG
+		               , MAX(SQL_COUNT_MAX) AS SQL_COUNT_MAX
+		               , AVG(SQL_TIME_AVG) AS SQL_TIME_AVG
+		               , MAX(SQL_TIME_MAX) AS SQL_TIME_MAX 
+		               , SUM(REQUEST_COUNT) AS REQUEST_COUNT
+		               , SUM(ERROR_COUNT) AS ERROR_COUNT
+		               , SUM(ELAPSED_EXCEED_COUNT) AS ELAPSED_EXCEED_COUNT
+		          FROM SERVICE_5M_03 A JOIN AGENT_INFO_TBL B
+		            ON A.OBJECT_HASH = B.OBJECT_HASH
+		         WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
+		         GROUP BY OBJECT_NAME, SERVICE_HASH
+		         UNION
+		        SELECT SERVICE_HASH
+		               , SUBSTR(MAX(OBJECT_NAME)
+		                        , LOCATE('/', MAX(OBJECT_NAME), 2) + 1
+		                        , ((LOCATE('-', MAX(OBJECT_NAME), LOCATE('/', MAX(OBJECT_NAME), 2) + 1) + 1) - (LOCATE('/', MAX(OBJECT_NAME), 2) + 1) - 1)) AS APP_ID
+		               , MAX(SERVICE_NAME) AS SERVICE_NAME
+		               , AVG(ELAPSED_AVG) AS ELAPSED_AVG
+		               , MAX(ELAPSED_MAX) AS ELAPSED_MAX
+		               , AVG(SQL_COUNT_AVG) AS SQL_COUNT_AVG
+		               , MAX(SQL_COUNT_MAX) AS SQL_COUNT_MAX
+		               , AVG(SQL_TIME_AVG) AS SQL_TIME_AVG
+		               , MAX(SQL_TIME_MAX) AS SQL_TIME_MAX 
+		               , SUM(REQUEST_COUNT) AS REQUEST_COUNT
+		               , SUM(ERROR_COUNT) AS ERROR_COUNT
+		               , SUM(ELAPSED_EXCEED_COUNT) AS ELAPSED_EXCEED_COUNT
+		          FROM SERVICE_5M_04 A JOIN AGENT_INFO_TBL B
+		            ON A.OBJECT_HASH = B.OBJECT_HASH
+		         WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
+		         GROUP BY OBJECT_NAME, SERVICE_HASH
+		         UNION
+		        SELECT SERVICE_HASH
+		               , SUBSTR(MAX(OBJECT_NAME)
+		                        , LOCATE('/', MAX(OBJECT_NAME), 2) + 1
+		                        , ((LOCATE('-', MAX(OBJECT_NAME), LOCATE('/', MAX(OBJECT_NAME), 2) + 1) + 1) - (LOCATE('/', MAX(OBJECT_NAME), 2) + 1) - 1)) AS APP_ID
+		               , MAX(SERVICE_NAME) AS SERVICE_NAME
+		               , AVG(ELAPSED_AVG) AS ELAPSED_AVG
+		               , MAX(ELAPSED_MAX) AS ELAPSED_MAX
+		               , AVG(SQL_COUNT_AVG) AS SQL_COUNT_AVG
+		               , MAX(SQL_COUNT_MAX) AS SQL_COUNT_MAX
+		               , AVG(SQL_TIME_AVG) AS SQL_TIME_AVG
+		               , MAX(SQL_TIME_MAX) AS SQL_TIME_MAX 
+		               , SUM(REQUEST_COUNT) AS REQUEST_COUNT
+		               , SUM(ERROR_COUNT) AS ERROR_COUNT
+		               , SUM(ELAPSED_EXCEED_COUNT) AS ELAPSED_EXCEED_COUNT
+		          FROM SERVICE_5M_05 A JOIN AGENT_INFO_TBL B
+		            ON A.OBJECT_HASH = B.OBJECT_HASH
+		         WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
+		         GROUP BY OBJECT_NAME, SERVICE_HASH
+		         UNION
+		        SELECT SERVICE_HASH
+		               , SUBSTR(MAX(OBJECT_NAME)
+		                        , LOCATE('/', MAX(OBJECT_NAME), 2) + 1
+		                        , ((LOCATE('-', MAX(OBJECT_NAME), LOCATE('/', MAX(OBJECT_NAME), 2) + 1) + 1) - (LOCATE('/', MAX(OBJECT_NAME), 2) + 1) - 1)) AS APP_ID
+		               , MAX(SERVICE_NAME) AS SERVICE_NAME
+		               , AVG(ELAPSED_AVG) AS ELAPSED_AVG
+		               , MAX(ELAPSED_MAX) AS ELAPSED_MAX
+		               , AVG(SQL_COUNT_AVG) AS SQL_COUNT_AVG
+		               , MAX(SQL_COUNT_MAX) AS SQL_COUNT_MAX
+		               , AVG(SQL_TIME_AVG) AS SQL_TIME_AVG
+		               , MAX(SQL_TIME_MAX) AS SQL_TIME_MAX 
+		               , SUM(REQUEST_COUNT) AS REQUEST_COUNT
+		               , SUM(ERROR_COUNT) AS ERROR_COUNT
+		               , SUM(ELAPSED_EXCEED_COUNT) AS ELAPSED_EXCEED_COUNT
+		          FROM SERVICE_5M_06 A JOIN AGENT_INFO_TBL B
+		            ON A.OBJECT_HASH = B.OBJECT_HASH
+		         WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
+		         GROUP BY OBJECT_NAME, SERVICE_HASH
+		         UNION
+		        SELECT SERVICE_HASH
+		               , SUBSTR(MAX(OBJECT_NAME)
+		                        , LOCATE('/', MAX(OBJECT_NAME), 2) + 1
+		                        , ((LOCATE('-', MAX(OBJECT_NAME), LOCATE('/', MAX(OBJECT_NAME), 2) + 1) + 1) - (LOCATE('/', MAX(OBJECT_NAME), 2) + 1) - 1)) AS APP_ID
+		               , MAX(SERVICE_NAME) AS SERVICE_NAME
+		               , AVG(ELAPSED_AVG) AS ELAPSED_AVG
+		               , MAX(ELAPSED_MAX) AS ELAPSED_MAX
+		               , AVG(SQL_COUNT_AVG) AS SQL_COUNT_AVG
+		               , MAX(SQL_COUNT_MAX) AS SQL_COUNT_MAX
+		               , AVG(SQL_TIME_AVG) AS SQL_TIME_AVG
+		               , MAX(SQL_TIME_MAX) AS SQL_TIME_MAX 
+		               , SUM(REQUEST_COUNT) AS REQUEST_COUNT
+		               , SUM(ERROR_COUNT) AS ERROR_COUNT
+		               , SUM(ELAPSED_EXCEED_COUNT) AS ELAPSED_EXCEED_COUNT
+		          FROM SERVICE_5M_07 A JOIN AGENT_INFO_TBL B
+		            ON A.OBJECT_HASH = B.OBJECT_HASH
+		         WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
+		         GROUP BY OBJECT_NAME, SERVICE_HASH
+		         UNION
+		        SELECT SERVICE_HASH
+		               , SUBSTR(MAX(OBJECT_NAME)
+		                        , LOCATE('/', MAX(OBJECT_NAME), 2) + 1
+		                        , ((LOCATE('-', MAX(OBJECT_NAME), LOCATE('/', MAX(OBJECT_NAME), 2) + 1) + 1) - (LOCATE('/', MAX(OBJECT_NAME), 2) + 1) - 1)) AS APP_ID
+		               , MAX(SERVICE_NAME) AS SERVICE_NAME
+		               , AVG(ELAPSED_AVG) AS ELAPSED_AVG
+		               , MAX(ELAPSED_MAX) AS ELAPSED_MAX
+		               , AVG(SQL_COUNT_AVG) AS SQL_COUNT_AVG
+		               , MAX(SQL_COUNT_MAX) AS SQL_COUNT_MAX
+		               , AVG(SQL_TIME_AVG) AS SQL_TIME_AVG
+		               , MAX(SQL_TIME_MAX) AS SQL_TIME_MAX 
+		               , SUM(REQUEST_COUNT) AS REQUEST_COUNT
+		               , SUM(ERROR_COUNT) AS ERROR_COUNT
+		               , SUM(ELAPSED_EXCEED_COUNT) AS ELAPSED_EXCEED_COUNT
+		          FROM SERVICE_5M_08 A JOIN AGENT_INFO_TBL B
+		            ON A.OBJECT_HASH = B.OBJECT_HASH
+		         WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
+		         GROUP BY OBJECT_NAME, SERVICE_HASH
+		         UNION
+		        SELECT SERVICE_HASH
+		               , SUBSTR(MAX(OBJECT_NAME)
+		                        , LOCATE('/', MAX(OBJECT_NAME), 2) + 1
+		                        , ((LOCATE('-', MAX(OBJECT_NAME), LOCATE('/', MAX(OBJECT_NAME), 2) + 1) + 1) - (LOCATE('/', MAX(OBJECT_NAME), 2) + 1) - 1)) AS APP_ID
+		               , MAX(SERVICE_NAME) AS SERVICE_NAME
+		               , AVG(ELAPSED_AVG) AS ELAPSED_AVG
+		               , MAX(ELAPSED_MAX) AS ELAPSED_MAX
+		               , AVG(SQL_COUNT_AVG) AS SQL_COUNT_AVG
+		               , MAX(SQL_COUNT_MAX) AS SQL_COUNT_MAX
+		               , AVG(SQL_TIME_AVG) AS SQL_TIME_AVG
+		               , MAX(SQL_TIME_MAX) AS SQL_TIME_MAX 
+		               , SUM(REQUEST_COUNT) AS REQUEST_COUNT
+		               , SUM(ERROR_COUNT) AS ERROR_COUNT
+		               , SUM(ELAPSED_EXCEED_COUNT) AS ELAPSED_EXCEED_COUNT
+		          FROM SERVICE_5M_09 A JOIN AGENT_INFO_TBL B
+		            ON A.OBJECT_HASH = B.OBJECT_HASH
+		         WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
+		         GROUP BY OBJECT_NAME, SERVICE_HASH
+		         UNION
+		        SELECT SERVICE_HASH
+		               , SUBSTR(MAX(OBJECT_NAME)
+		                        , LOCATE('/', MAX(OBJECT_NAME), 2) + 1
+		                        , ((LOCATE('-', MAX(OBJECT_NAME), LOCATE('/', MAX(OBJECT_NAME), 2) + 1) + 1) - (LOCATE('/', MAX(OBJECT_NAME), 2) + 1) - 1)) AS APP_ID
+		               , MAX(SERVICE_NAME) AS SERVICE_NAME
+		               , AVG(ELAPSED_AVG) AS ELAPSED_AVG
+		               , MAX(ELAPSED_MAX) AS ELAPSED_MAX
+		               , AVG(SQL_COUNT_AVG) AS SQL_COUNT_AVG
+		               , MAX(SQL_COUNT_MAX) AS SQL_COUNT_MAX
+		               , AVG(SQL_TIME_AVG) AS SQL_TIME_AVG
+		               , MAX(SQL_TIME_MAX) AS SQL_TIME_MAX 
+		               , SUM(REQUEST_COUNT) AS REQUEST_COUNT
+		               , SUM(ERROR_COUNT) AS ERROR_COUNT
+		               , SUM(ELAPSED_EXCEED_COUNT) AS ELAPSED_EXCEED_COUNT
+		          FROM SERVICE_5M_10 A JOIN AGENT_INFO_TBL B
+		            ON A.OBJECT_HASH = B.OBJECT_HASH
+		         WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
+		         GROUP BY OBJECT_NAME, SERVICE_HASH
+		         UNION
+		        SELECT SERVICE_HASH
+		               , SUBSTR(MAX(OBJECT_NAME)
+		                        , LOCATE('/', MAX(OBJECT_NAME), 2) + 1
+		                        , ((LOCATE('-', MAX(OBJECT_NAME), LOCATE('/', MAX(OBJECT_NAME), 2) + 1) + 1) - (LOCATE('/', MAX(OBJECT_NAME), 2) + 1) - 1)) AS APP_ID
+		               , MAX(SERVICE_NAME) AS SERVICE_NAME
+		               , AVG(ELAPSED_AVG) AS ELAPSED_AVG
+		               , MAX(ELAPSED_MAX) AS ELAPSED_MAX
+		               , AVG(SQL_COUNT_AVG) AS SQL_COUNT_AVG
+		               , MAX(SQL_COUNT_MAX) AS SQL_COUNT_MAX
+		               , AVG(SQL_TIME_AVG) AS SQL_TIME_AVG
+		               , MAX(SQL_TIME_MAX) AS SQL_TIME_MAX 
+		               , SUM(REQUEST_COUNT) AS REQUEST_COUNT
+		               , SUM(ERROR_COUNT) AS ERROR_COUNT
+		               , SUM(ELAPSED_EXCEED_COUNT) AS ELAPSED_EXCEED_COUNT
+		          FROM SERVICE_5M_11 A JOIN AGENT_INFO_TBL B
+		            ON A.OBJECT_HASH = B.OBJECT_HASH
+		         WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
+		         GROUP BY OBJECT_NAME, SERVICE_HASH
+		         UNION
+		        SELECT SERVICE_HASH
+		               , SUBSTR(MAX(OBJECT_NAME)
+		                        , LOCATE('/', MAX(OBJECT_NAME), 2) + 1
+		                        , ((LOCATE('-', MAX(OBJECT_NAME), LOCATE('/', MAX(OBJECT_NAME), 2) + 1) + 1) - (LOCATE('/', MAX(OBJECT_NAME), 2) + 1) - 1)) AS APP_ID
+		               , MAX(SERVICE_NAME) AS SERVICE_NAME
+		               , AVG(ELAPSED_AVG) AS ELAPSED_AVG
+		               , MAX(ELAPSED_MAX) AS ELAPSED_MAX
+		               , AVG(SQL_COUNT_AVG) AS SQL_COUNT_AVG
+		               , MAX(SQL_COUNT_MAX) AS SQL_COUNT_MAX
+		               , AVG(SQL_TIME_AVG) AS SQL_TIME_AVG
+		               , MAX(SQL_TIME_MAX) AS SQL_TIME_MAX 
+		               , SUM(REQUEST_COUNT) AS REQUEST_COUNT
+		               , SUM(ERROR_COUNT) AS ERROR_COUNT
+		               , SUM(ELAPSED_EXCEED_COUNT) AS ELAPSED_EXCEED_COUNT
+		          FROM SERVICE_5M_12 A JOIN AGENT_INFO_TBL B
+		            ON A.OBJECT_HASH = B.OBJECT_HASH
+		         WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
+		         GROUP BY OBJECT_NAME, SERVICE_HASH
+		         UNION
+		        SELECT SERVICE_HASH
+		               , SUBSTR(MAX(OBJECT_NAME)
+		                        , LOCATE('/', MAX(OBJECT_NAME), 2) + 1
+		                        , ((LOCATE('-', MAX(OBJECT_NAME), LOCATE('/', MAX(OBJECT_NAME), 2) + 1) + 1) - (LOCATE('/', MAX(OBJECT_NAME), 2) + 1) - 1)) AS APP_ID
+		               , MAX(SERVICE_NAME) AS SERVICE_NAME
+		               , AVG(ELAPSED_AVG) AS ELAPSED_AVG
+		               , MAX(ELAPSED_MAX) AS ELAPSED_MAX
+		               , AVG(SQL_COUNT_AVG) AS SQL_COUNT_AVG
+		               , MAX(SQL_COUNT_MAX) AS SQL_COUNT_MAX
+		               , AVG(SQL_TIME_AVG) AS SQL_TIME_AVG
+		               , MAX(SQL_TIME_MAX) AS SQL_TIME_MAX 
+		               , SUM(REQUEST_COUNT) AS REQUEST_COUNT
+		               , SUM(ERROR_COUNT) AS ERROR_COUNT
+		               , SUM(ELAPSED_EXCEED_COUNT) AS ELAPSED_EXCEED_COUNT
+		          FROM SERVICE_5M_13 A JOIN AGENT_INFO_TBL B
+		            ON A.OBJECT_HASH = B.OBJECT_HASH
+		         WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
+		         GROUP BY OBJECT_NAME, SERVICE_HASH
+		         UNION
+		        SELECT SERVICE_HASH
+		               , SUBSTR(MAX(OBJECT_NAME)
+		                        , LOCATE('/', MAX(OBJECT_NAME), 2) + 1
+		                        , ((LOCATE('-', MAX(OBJECT_NAME), LOCATE('/', MAX(OBJECT_NAME), 2) + 1) + 1) - (LOCATE('/', MAX(OBJECT_NAME), 2) + 1) - 1)) AS APP_ID
+		               , MAX(SERVICE_NAME) AS SERVICE_NAME
+		               , AVG(ELAPSED_AVG) AS ELAPSED_AVG
+		               , MAX(ELAPSED_MAX) AS ELAPSED_MAX
+		               , AVG(SQL_COUNT_AVG) AS SQL_COUNT_AVG
+		               , MAX(SQL_COUNT_MAX) AS SQL_COUNT_MAX
+		               , AVG(SQL_TIME_AVG) AS SQL_TIME_AVG
+		               , MAX(SQL_TIME_MAX) AS SQL_TIME_MAX 
+		               , SUM(REQUEST_COUNT) AS REQUEST_COUNT
+		               , SUM(ERROR_COUNT) AS ERROR_COUNT
+		               , SUM(ELAPSED_EXCEED_COUNT) AS ELAPSED_EXCEED_COUNT
+		          FROM SERVICE_5M_14 A JOIN AGENT_INFO_TBL B
+		            ON A.OBJECT_HASH = B.OBJECT_HASH
+		         WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
+		         GROUP BY OBJECT_NAME, SERVICE_HASH
+		         UNION
+		        SELECT SERVICE_HASH
+		               , SUBSTR(MAX(OBJECT_NAME)
+		                        , LOCATE('/', MAX(OBJECT_NAME), 2) + 1
+		                        , ((LOCATE('-', MAX(OBJECT_NAME), LOCATE('/', MAX(OBJECT_NAME), 2) + 1) + 1) - (LOCATE('/', MAX(OBJECT_NAME), 2) + 1) - 1)) AS APP_ID
+		               , MAX(SERVICE_NAME) AS SERVICE_NAME
+		               , AVG(ELAPSED_AVG) AS ELAPSED_AVG
+		               , MAX(ELAPSED_MAX) AS ELAPSED_MAX
+		               , AVG(SQL_COUNT_AVG) AS SQL_COUNT_AVG
+		               , MAX(SQL_COUNT_MAX) AS SQL_COUNT_MAX
+		               , AVG(SQL_TIME_AVG) AS SQL_TIME_AVG
+		               , MAX(SQL_TIME_MAX) AS SQL_TIME_MAX 
+		               , SUM(REQUEST_COUNT) AS REQUEST_COUNT
+		               , SUM(ERROR_COUNT) AS ERROR_COUNT
+		               , SUM(ELAPSED_EXCEED_COUNT) AS ELAPSED_EXCEED_COUNT
+		          FROM SERVICE_5M_15 A JOIN AGENT_INFO_TBL B
+		            ON A.OBJECT_HASH = B.OBJECT_HASH
+		         WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
+		         GROUP BY OBJECT_NAME, SERVICE_HASH
+		         UNION
+		        SELECT SERVICE_HASH
+		               , SUBSTR(MAX(OBJECT_NAME)
+		                        , LOCATE('/', MAX(OBJECT_NAME), 2) + 1
+		                        , ((LOCATE('-', MAX(OBJECT_NAME), LOCATE('/', MAX(OBJECT_NAME), 2) + 1) + 1) - (LOCATE('/', MAX(OBJECT_NAME), 2) + 1) - 1)) AS APP_ID
+		               , MAX(SERVICE_NAME) AS SERVICE_NAME
+		               , AVG(ELAPSED_AVG) AS ELAPSED_AVG
+		               , MAX(ELAPSED_MAX) AS ELAPSED_MAX
+		               , AVG(SQL_COUNT_AVG) AS SQL_COUNT_AVG
+		               , MAX(SQL_COUNT_MAX) AS SQL_COUNT_MAX
+		               , AVG(SQL_TIME_AVG) AS SQL_TIME_AVG
+		               , MAX(SQL_TIME_MAX) AS SQL_TIME_MAX 
+		               , SUM(REQUEST_COUNT) AS REQUEST_COUNT
+		               , SUM(ERROR_COUNT) AS ERROR_COUNT
+		               , SUM(ELAPSED_EXCEED_COUNT) AS ELAPSED_EXCEED_COUNT
+		          FROM SERVICE_5M_16 A JOIN AGENT_INFO_TBL B
+		            ON A.OBJECT_HASH = B.OBJECT_HASH
+		         WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
+		         GROUP BY OBJECT_NAME, SERVICE_HASH
+		         UNION
+		        SELECT SERVICE_HASH
+		               , SUBSTR(MAX(OBJECT_NAME)
+		                        , LOCATE('/', MAX(OBJECT_NAME), 2) + 1
+		                        , ((LOCATE('-', MAX(OBJECT_NAME), LOCATE('/', MAX(OBJECT_NAME), 2) + 1) + 1) - (LOCATE('/', MAX(OBJECT_NAME), 2) + 1) - 1)) AS APP_ID
+		               , MAX(SERVICE_NAME) AS SERVICE_NAME
+		               , AVG(ELAPSED_AVG) AS ELAPSED_AVG
+		               , MAX(ELAPSED_MAX) AS ELAPSED_MAX
+		               , AVG(SQL_COUNT_AVG) AS SQL_COUNT_AVG
+		               , MAX(SQL_COUNT_MAX) AS SQL_COUNT_MAX
+		               , AVG(SQL_TIME_AVG) AS SQL_TIME_AVG
+		               , MAX(SQL_TIME_MAX) AS SQL_TIME_MAX 
+		               , SUM(REQUEST_COUNT) AS REQUEST_COUNT
+		               , SUM(ERROR_COUNT) AS ERROR_COUNT
+		               , SUM(ELAPSED_EXCEED_COUNT) AS ELAPSED_EXCEED_COUNT
+		          FROM SERVICE_5M_17 A JOIN AGENT_INFO_TBL B
+		            ON A.OBJECT_HASH = B.OBJECT_HASH
+		         WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
+		         GROUP BY OBJECT_NAME, SERVICE_HASH
+		         UNION
+		        SELECT SERVICE_HASH
+		               , SUBSTR(MAX(OBJECT_NAME)
+		                        , LOCATE('/', MAX(OBJECT_NAME), 2) + 1
+		                        , ((LOCATE('-', MAX(OBJECT_NAME), LOCATE('/', MAX(OBJECT_NAME), 2) + 1) + 1) - (LOCATE('/', MAX(OBJECT_NAME), 2) + 1) - 1)) AS APP_ID
+		               , MAX(SERVICE_NAME) AS SERVICE_NAME
+		               , AVG(ELAPSED_AVG) AS ELAPSED_AVG
+		               , MAX(ELAPSED_MAX) AS ELAPSED_MAX
+		               , AVG(SQL_COUNT_AVG) AS SQL_COUNT_AVG
+		               , MAX(SQL_COUNT_MAX) AS SQL_COUNT_MAX
+		               , AVG(SQL_TIME_AVG) AS SQL_TIME_AVG
+		               , MAX(SQL_TIME_MAX) AS SQL_TIME_MAX 
+		               , SUM(REQUEST_COUNT) AS REQUEST_COUNT
+		               , SUM(ERROR_COUNT) AS ERROR_COUNT
+		               , SUM(ELAPSED_EXCEED_COUNT) AS ELAPSED_EXCEED_COUNT
+		          FROM SERVICE_5M_18 A JOIN AGENT_INFO_TBL B
+		            ON A.OBJECT_HASH = B.OBJECT_HASH
+		         WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
+		         GROUP BY OBJECT_NAME, SERVICE_HASH
+		         UNION
+		        SELECT SERVICE_HASH
+		               , SUBSTR(MAX(OBJECT_NAME)
+		                        , LOCATE('/', MAX(OBJECT_NAME), 2) + 1
+		                        , ((LOCATE('-', MAX(OBJECT_NAME), LOCATE('/', MAX(OBJECT_NAME), 2) + 1) + 1) - (LOCATE('/', MAX(OBJECT_NAME), 2) + 1) - 1)) AS APP_ID
+		               , MAX(SERVICE_NAME) AS SERVICE_NAME
+		               , AVG(ELAPSED_AVG) AS ELAPSED_AVG
+		               , MAX(ELAPSED_MAX) AS ELAPSED_MAX
+		               , AVG(SQL_COUNT_AVG) AS SQL_COUNT_AVG
+		               , MAX(SQL_COUNT_MAX) AS SQL_COUNT_MAX
+		               , AVG(SQL_TIME_AVG) AS SQL_TIME_AVG
+		               , MAX(SQL_TIME_MAX) AS SQL_TIME_MAX 
+		               , SUM(REQUEST_COUNT) AS REQUEST_COUNT
+		               , SUM(ERROR_COUNT) AS ERROR_COUNT
+		               , SUM(ELAPSED_EXCEED_COUNT) AS ELAPSED_EXCEED_COUNT
+		          FROM SERVICE_5M_19 A JOIN AGENT_INFO_TBL B
+		            ON A.OBJECT_HASH = B.OBJECT_HASH
+		         WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
+		         GROUP BY OBJECT_NAME, SERVICE_HASH
+		         UNION
+		        SELECT SERVICE_HASH
+		               , SUBSTR(MAX(OBJECT_NAME)
+		                        , LOCATE('/', MAX(OBJECT_NAME), 2) + 1
+		                        , ((LOCATE('-', MAX(OBJECT_NAME), LOCATE('/', MAX(OBJECT_NAME), 2) + 1) + 1) - (LOCATE('/', MAX(OBJECT_NAME), 2) + 1) - 1)) AS APP_ID
+		               , MAX(SERVICE_NAME) AS SERVICE_NAME
+		               , AVG(ELAPSED_AVG) AS ELAPSED_AVG
+		               , MAX(ELAPSED_MAX) AS ELAPSED_MAX
+		               , AVG(SQL_COUNT_AVG) AS SQL_COUNT_AVG
+		               , MAX(SQL_COUNT_MAX) AS SQL_COUNT_MAX
+		               , AVG(SQL_TIME_AVG) AS SQL_TIME_AVG
+		               , MAX(SQL_TIME_MAX) AS SQL_TIME_MAX 
+		               , SUM(REQUEST_COUNT) AS REQUEST_COUNT
+		               , SUM(ERROR_COUNT) AS ERROR_COUNT
+		               , SUM(ELAPSED_EXCEED_COUNT) AS ELAPSED_EXCEED_COUNT
+		          FROM SERVICE_5M_20 A JOIN AGENT_INFO_TBL B
+		            ON A.OBJECT_HASH = B.OBJECT_HASH
+		         WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
+		         GROUP BY OBJECT_NAME, SERVICE_HASH
+		         UNION
+		        SELECT SERVICE_HASH
+		               , SUBSTR(MAX(OBJECT_NAME)
+		                        , LOCATE('/', MAX(OBJECT_NAME), 2) + 1
+		                        , ((LOCATE('-', MAX(OBJECT_NAME), LOCATE('/', MAX(OBJECT_NAME), 2) + 1) + 1) - (LOCATE('/', MAX(OBJECT_NAME), 2) + 1) - 1)) AS APP_ID
+		               , MAX(SERVICE_NAME) AS SERVICE_NAME
+		               , AVG(ELAPSED_AVG) AS ELAPSED_AVG
+		               , MAX(ELAPSED_MAX) AS ELAPSED_MAX
+		               , AVG(SQL_COUNT_AVG) AS SQL_COUNT_AVG
+		               , MAX(SQL_COUNT_MAX) AS SQL_COUNT_MAX
+		               , AVG(SQL_TIME_AVG) AS SQL_TIME_AVG
+		               , MAX(SQL_TIME_MAX) AS SQL_TIME_MAX 
+		               , SUM(REQUEST_COUNT) AS REQUEST_COUNT
+		               , SUM(ERROR_COUNT) AS ERROR_COUNT
+		               , SUM(ELAPSED_EXCEED_COUNT) AS ELAPSED_EXCEED_COUNT
+		          FROM SERVICE_5M_21 A JOIN AGENT_INFO_TBL B
+		            ON A.OBJECT_HASH = B.OBJECT_HASH
+		         WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
+		         GROUP BY OBJECT_NAME, SERVICE_HASH
+		         UNION
+		        SELECT SERVICE_HASH
+		               , SUBSTR(MAX(OBJECT_NAME)
+		                        , LOCATE('/', MAX(OBJECT_NAME), 2) + 1
+		                        , ((LOCATE('-', MAX(OBJECT_NAME), LOCATE('/', MAX(OBJECT_NAME), 2) + 1) + 1) - (LOCATE('/', MAX(OBJECT_NAME), 2) + 1) - 1)) AS APP_ID
+		               , MAX(SERVICE_NAME) AS SERVICE_NAME
+		               , AVG(ELAPSED_AVG) AS ELAPSED_AVG
+		               , MAX(ELAPSED_MAX) AS ELAPSED_MAX
+		               , AVG(SQL_COUNT_AVG) AS SQL_COUNT_AVG
+		               , MAX(SQL_COUNT_MAX) AS SQL_COUNT_MAX
+		               , AVG(SQL_TIME_AVG) AS SQL_TIME_AVG
+		               , MAX(SQL_TIME_MAX) AS SQL_TIME_MAX 
+		               , SUM(REQUEST_COUNT) AS REQUEST_COUNT
+		               , SUM(ERROR_COUNT) AS ERROR_COUNT
+		               , SUM(ELAPSED_EXCEED_COUNT) AS ELAPSED_EXCEED_COUNT
+		          FROM SERVICE_5M_22 A JOIN AGENT_INFO_TBL B
+		            ON A.OBJECT_HASH = B.OBJECT_HASH
+		         WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
+		         GROUP BY OBJECT_NAME, SERVICE_HASH
+		         UNION
+		        SELECT SERVICE_HASH
+		               , SUBSTR(MAX(OBJECT_NAME)
+		                        , LOCATE('/', MAX(OBJECT_NAME), 2) + 1
+		                        , ((LOCATE('-', MAX(OBJECT_NAME), LOCATE('/', MAX(OBJECT_NAME), 2) + 1) + 1) - (LOCATE('/', MAX(OBJECT_NAME), 2) + 1) - 1)) AS APP_ID
+		               , MAX(SERVICE_NAME) AS SERVICE_NAME
+		               , AVG(ELAPSED_AVG) AS ELAPSED_AVG
+		               , MAX(ELAPSED_MAX) AS ELAPSED_MAX
+		               , AVG(SQL_COUNT_AVG) AS SQL_COUNT_AVG
+		               , MAX(SQL_COUNT_MAX) AS SQL_COUNT_MAX
+		               , AVG(SQL_TIME_AVG) AS SQL_TIME_AVG
+		               , MAX(SQL_TIME_MAX) AS SQL_TIME_MAX 
+		               , SUM(REQUEST_COUNT) AS REQUEST_COUNT
+		               , SUM(ERROR_COUNT) AS ERROR_COUNT
+		               , SUM(ELAPSED_EXCEED_COUNT) AS ELAPSED_EXCEED_COUNT
+		          FROM SERVICE_5M_23 A JOIN AGENT_INFO_TBL B
+		            ON A.OBJECT_HASH = B.OBJECT_HASH
+		         WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
+		         GROUP BY OBJECT_NAME, SERVICE_HASH
+		         UNION
+		        SELECT SERVICE_HASH
+		               , SUBSTR(MAX(OBJECT_NAME)
+		                        , LOCATE('/', MAX(OBJECT_NAME), 2) + 1
+		                        , ((LOCATE('-', MAX(OBJECT_NAME), LOCATE('/', MAX(OBJECT_NAME), 2) + 1) + 1) - (LOCATE('/', MAX(OBJECT_NAME), 2) + 1) - 1)) AS APP_ID
+		               , MAX(SERVICE_NAME) AS SERVICE_NAME
+		               , AVG(ELAPSED_AVG) AS ELAPSED_AVG
+		               , MAX(ELAPSED_MAX) AS ELAPSED_MAX
+		               , AVG(SQL_COUNT_AVG) AS SQL_COUNT_AVG
+		               , MAX(SQL_COUNT_MAX) AS SQL_COUNT_MAX
+		               , AVG(SQL_TIME_AVG) AS SQL_TIME_AVG
+		               , MAX(SQL_TIME_MAX) AS SQL_TIME_MAX 
+		               , SUM(REQUEST_COUNT) AS REQUEST_COUNT
+		               , SUM(ERROR_COUNT) AS ERROR_COUNT
+		               , SUM(ELAPSED_EXCEED_COUNT) AS ELAPSED_EXCEED_COUNT
+		          FROM SERVICE_5M_24 A JOIN AGENT_INFO_TBL B
+		            ON A.OBJECT_HASH = B.OBJECT_HASH
+		         WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
+		         GROUP BY OBJECT_NAME, SERVICE_HASH
+		         UNION
+		        SELECT SERVICE_HASH
+		               , SUBSTR(MAX(OBJECT_NAME)
+		                        , LOCATE('/', MAX(OBJECT_NAME), 2) + 1
+		                        , ((LOCATE('-', MAX(OBJECT_NAME), LOCATE('/', MAX(OBJECT_NAME), 2) + 1) + 1) - (LOCATE('/', MAX(OBJECT_NAME), 2) + 1) - 1)) AS APP_ID
+		               , MAX(SERVICE_NAME) AS SERVICE_NAME
+		               , AVG(ELAPSED_AVG) AS ELAPSED_AVG
+		               , MAX(ELAPSED_MAX) AS ELAPSED_MAX
+		               , AVG(SQL_COUNT_AVG) AS SQL_COUNT_AVG
+		               , MAX(SQL_COUNT_MAX) AS SQL_COUNT_MAX
+		               , AVG(SQL_TIME_AVG) AS SQL_TIME_AVG
+		               , MAX(SQL_TIME_MAX) AS SQL_TIME_MAX 
+		               , SUM(REQUEST_COUNT) AS REQUEST_COUNT
+		               , SUM(ERROR_COUNT) AS ERROR_COUNT
+		               , SUM(ELAPSED_EXCEED_COUNT) AS ELAPSED_EXCEED_COUNT
+		          FROM SERVICE_5M_25 A JOIN AGENT_INFO_TBL B
+		            ON A.OBJECT_HASH = B.OBJECT_HASH
+		         WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
+		         GROUP BY OBJECT_NAME, SERVICE_HASH
+		         UNION
+		        SELECT SERVICE_HASH
+		               , SUBSTR(MAX(OBJECT_NAME)
+		                        , LOCATE('/', MAX(OBJECT_NAME), 2) + 1
+		                        , ((LOCATE('-', MAX(OBJECT_NAME), LOCATE('/', MAX(OBJECT_NAME), 2) + 1) + 1) - (LOCATE('/', MAX(OBJECT_NAME), 2) + 1) - 1)) AS APP_ID
+		               , MAX(SERVICE_NAME) AS SERVICE_NAME
+		               , AVG(ELAPSED_AVG) AS ELAPSED_AVG
+		               , MAX(ELAPSED_MAX) AS ELAPSED_MAX
+		               , AVG(SQL_COUNT_AVG) AS SQL_COUNT_AVG
+		               , MAX(SQL_COUNT_MAX) AS SQL_COUNT_MAX
+		               , AVG(SQL_TIME_AVG) AS SQL_TIME_AVG
+		               , MAX(SQL_TIME_MAX) AS SQL_TIME_MAX 
+		               , SUM(REQUEST_COUNT) AS REQUEST_COUNT
+		               , SUM(ERROR_COUNT) AS ERROR_COUNT
+		               , SUM(ELAPSED_EXCEED_COUNT) AS ELAPSED_EXCEED_COUNT
+		          FROM SERVICE_5M_26 A JOIN AGENT_INFO_TBL B
+		            ON A.OBJECT_HASH = B.OBJECT_HASH
+		         WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
+		         GROUP BY OBJECT_NAME, SERVICE_HASH
+		         UNION
+		        SELECT SERVICE_HASH
+		               , SUBSTR(MAX(OBJECT_NAME)
+		                        , LOCATE('/', MAX(OBJECT_NAME), 2) + 1
+		                        , ((LOCATE('-', MAX(OBJECT_NAME), LOCATE('/', MAX(OBJECT_NAME), 2) + 1) + 1) - (LOCATE('/', MAX(OBJECT_NAME), 2) + 1) - 1)) AS APP_ID
+		               , MAX(SERVICE_NAME) AS SERVICE_NAME
+		               , AVG(ELAPSED_AVG) AS ELAPSED_AVG
+		               , MAX(ELAPSED_MAX) AS ELAPSED_MAX
+		               , AVG(SQL_COUNT_AVG) AS SQL_COUNT_AVG
+		               , MAX(SQL_COUNT_MAX) AS SQL_COUNT_MAX
+		               , AVG(SQL_TIME_AVG) AS SQL_TIME_AVG
+		               , MAX(SQL_TIME_MAX) AS SQL_TIME_MAX 
+		               , SUM(REQUEST_COUNT) AS REQUEST_COUNT
+		               , SUM(ERROR_COUNT) AS ERROR_COUNT
+		               , SUM(ELAPSED_EXCEED_COUNT) AS ELAPSED_EXCEED_COUNT
+		          FROM SERVICE_5M_27 A JOIN AGENT_INFO_TBL B
+		            ON A.OBJECT_HASH = B.OBJECT_HASH
+		         WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
+		         GROUP BY OBJECT_NAME, SERVICE_HASH
+		         UNION
+		        SELECT SERVICE_HASH
+		               , SUBSTR(MAX(OBJECT_NAME)
+		                        , LOCATE('/', MAX(OBJECT_NAME), 2) + 1
+		                        , ((LOCATE('-', MAX(OBJECT_NAME), LOCATE('/', MAX(OBJECT_NAME), 2) + 1) + 1) - (LOCATE('/', MAX(OBJECT_NAME), 2) + 1) - 1)) AS APP_ID
+		               , MAX(SERVICE_NAME) AS SERVICE_NAME
+		               , AVG(ELAPSED_AVG) AS ELAPSED_AVG
+		               , MAX(ELAPSED_MAX) AS ELAPSED_MAX
+		               , AVG(SQL_COUNT_AVG) AS SQL_COUNT_AVG
+		               , MAX(SQL_COUNT_MAX) AS SQL_COUNT_MAX
+		               , AVG(SQL_TIME_AVG) AS SQL_TIME_AVG
+		               , MAX(SQL_TIME_MAX) AS SQL_TIME_MAX 
+		               , SUM(REQUEST_COUNT) AS REQUEST_COUNT
+		               , SUM(ERROR_COUNT) AS ERROR_COUNT
+		               , SUM(ELAPSED_EXCEED_COUNT) AS ELAPSED_EXCEED_COUNT
+		          FROM SERVICE_5M_28 A JOIN AGENT_INFO_TBL B
+		            ON A.OBJECT_HASH = B.OBJECT_HASH
+		         WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
+		         GROUP BY OBJECT_NAME, SERVICE_HASH
+		         UNION
+		        SELECT SERVICE_HASH
+		               , SUBSTR(MAX(OBJECT_NAME)
+		                        , LOCATE('/', MAX(OBJECT_NAME), 2) + 1
+		                        , ((LOCATE('-', MAX(OBJECT_NAME), LOCATE('/', MAX(OBJECT_NAME), 2) + 1) + 1) - (LOCATE('/', MAX(OBJECT_NAME), 2) + 1) - 1)) AS APP_ID
+		               , MAX(SERVICE_NAME) AS SERVICE_NAME
+		               , AVG(ELAPSED_AVG) AS ELAPSED_AVG
+		               , MAX(ELAPSED_MAX) AS ELAPSED_MAX
+		               , AVG(SQL_COUNT_AVG) AS SQL_COUNT_AVG
+		               , MAX(SQL_COUNT_MAX) AS SQL_COUNT_MAX
+		               , AVG(SQL_TIME_AVG) AS SQL_TIME_AVG
+		               , MAX(SQL_TIME_MAX) AS SQL_TIME_MAX 
+		               , SUM(REQUEST_COUNT) AS REQUEST_COUNT
+		               , SUM(ERROR_COUNT) AS ERROR_COUNT
+		               , SUM(ELAPSED_EXCEED_COUNT) AS ELAPSED_EXCEED_COUNT
+		          FROM SERVICE_5M_29 A JOIN AGENT_INFO_TBL B
+		            ON A.OBJECT_HASH = B.OBJECT_HASH
+		         WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
+		         GROUP BY OBJECT_NAME, SERVICE_HASH
+		         UNION
+		        SELECT SERVICE_HASH
+		               , SUBSTR(MAX(OBJECT_NAME)
+		                        , LOCATE('/', MAX(OBJECT_NAME), 2) + 1
+		                        , ((LOCATE('-', MAX(OBJECT_NAME), LOCATE('/', MAX(OBJECT_NAME), 2) + 1) + 1) - (LOCATE('/', MAX(OBJECT_NAME), 2) + 1) - 1)) AS APP_ID
+		               , MAX(SERVICE_NAME) AS SERVICE_NAME
+		               , AVG(ELAPSED_AVG) AS ELAPSED_AVG
+		               , MAX(ELAPSED_MAX) AS ELAPSED_MAX
+		               , AVG(SQL_COUNT_AVG) AS SQL_COUNT_AVG
+		               , MAX(SQL_COUNT_MAX) AS SQL_COUNT_MAX
+		               , AVG(SQL_TIME_AVG) AS SQL_TIME_AVG
+		               , MAX(SQL_TIME_MAX) AS SQL_TIME_MAX 
+		               , SUM(REQUEST_COUNT) AS REQUEST_COUNT
+		               , SUM(ERROR_COUNT) AS ERROR_COUNT
+		               , SUM(ELAPSED_EXCEED_COUNT) AS ELAPSED_EXCEED_COUNT
+		          FROM SERVICE_5M_30 A JOIN AGENT_INFO_TBL B
+		            ON A.OBJECT_HASH = B.OBJECT_HASH
+		         WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
+		         GROUP BY OBJECT_NAME, SERVICE_HASH
+		         UNION
+		        SELECT SERVICE_HASH
+		               , SUBSTR(MAX(OBJECT_NAME)
+		                        , LOCATE('/', MAX(OBJECT_NAME), 2) + 1
+		                        , ((LOCATE('-', MAX(OBJECT_NAME), LOCATE('/', MAX(OBJECT_NAME), 2) + 1) + 1) - (LOCATE('/', MAX(OBJECT_NAME), 2) + 1) - 1)) AS APP_ID
+		               , MAX(SERVICE_NAME) AS SERVICE_NAME
+		               , AVG(ELAPSED_AVG) AS ELAPSED_AVG
+		               , MAX(ELAPSED_MAX) AS ELAPSED_MAX
+		               , AVG(SQL_COUNT_AVG) AS SQL_COUNT_AVG
+		               , MAX(SQL_COUNT_MAX) AS SQL_COUNT_MAX
+		               , AVG(SQL_TIME_AVG) AS SQL_TIME_AVG
+		               , MAX(SQL_TIME_MAX) AS SQL_TIME_MAX 
+		               , SUM(REQUEST_COUNT) AS REQUEST_COUNT
+		               , SUM(ERROR_COUNT) AS ERROR_COUNT
+		               , SUM(ELAPSED_EXCEED_COUNT) AS ELAPSED_EXCEED_COUNT
+		          FROM SERVICE_5M_31 A JOIN AGENT_INFO_TBL B
+		            ON A.OBJECT_HASH = B.OBJECT_HASH
+		         WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
+		         GROUP BY OBJECT_NAME, SERVICE_HASH) A
+		 GROUP BY APP_ID, SERVICE_HASH
+		 ORDER BY REQUEST_COUNT DESC
+    </select>
+    
+    <select id="selectServiceDaySummary" parameterMap="ymd" resultType="scouter.plugin.server.reporting.vo.Service">
+		SELECT A.DAY
+		       , A.APP_ID
+		       , A.SERVICE_HASH
+		       , A.SERVICE_NAME
+		       , A.ELAPSED_AVG
+		       , A.ELAPSED_MAX
+		       , A.SQL_COUNT_AVG
+		       , A.SQL_COUNT_MAX
+		       , A.SQL_TIME_AVG
+		       , A.SQL_TIME_MAX
+		       , A.REQUEST_COUNT
+		       , A.ERROR_COUNT
+		       , A.ELAPSED_EXCEED_COUNT
+		       , (SELECT COUNT(DISTINCT(B.IP_ADDRESS)) 
+		            FROM IP_ADDRESS_5M_${date} B 
+		           WHERE A.SERVICE_HASH = B.SERVICE_HASH 
+		             AND A.LOG_DT = B.LOG_DT) AS IP_COUNT
+		       , (SELECT COUNT(DISTINCT(B.USER_AGENT)) 
+		            FROM USER_AGENT_5M_${date} B 
+		           WHERE A.SERVICE_HASH = B.SERVICE_HASH 
+		             AND A.LOG_DT = B.LOG_DT) AS UA_COUNT
+		  FROM (SELECT CASE WHEN MAX(LOG_DT) IS NULL THEN '${year}-${month}-${date}' ELSE MAX(LOG_DT) END AS DAY
+		               , MAX(LOG_DT) AS LOG_DT
+		               , SERVICE_HASH
+		               , SUBSTR(MAX(OBJECT_NAME)
+		                        , LOCATE('/', MAX(OBJECT_NAME), 2) + 1
+		                        , ((LOCATE('-', MAX(OBJECT_NAME), LOCATE('/', MAX(OBJECT_NAME), 2) + 1) + 1) - (LOCATE('/', MAX(OBJECT_NAME), 2) + 1) - 1)) AS APP_ID
+		               , MAX(SERVICE_NAME) AS SERVICE_NAME
+		               , AVG(ELAPSED_AVG) AS ELAPSED_AVG
+		               , MAX(ELAPSED_MAX) AS ELAPSED_MAX
+		               , AVG(SQL_COUNT_AVG) AS SQL_COUNT_AVG
+		               , MAX(SQL_COUNT_MAX) AS SQL_COUNT_MAX
+		               , AVG(SQL_TIME_AVG) AS SQL_TIME_AVG
+		               , MAX(SQL_TIME_MAX) AS SQL_TIME_MAX 
+		               , SUM(REQUEST_COUNT) AS REQUEST_COUNT
+		               , SUM(ERROR_COUNT) AS ERROR_COUNT
+		               , SUM(ELAPSED_EXCEED_COUNT) AS ELAPSED_EXCEED_COUNT
+		          FROM SERVICE_5M_${date} A JOIN AGENT_INFO_TBL B
+		            ON A.OBJECT_HASH = B.OBJECT_HASH
+		         WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
+		         GROUP BY OBJECT_NAME, SERVICE_HASH
+                 ORDER BY REQUEST_COUNT DESC) A
+    </select>
+    
+    <select id="selectHostHourlyStat" parameterMap="ymd" resultType="scouter.plugin.server.reporting.vo.HostAgent">
+        SELECT TRIM(CHAR(B.TIME)) || ':00' AS TIME
+               , B.OBJECT_NAME
+               , A.CPU_AVG
+               , A.CPU_MAX
+               , A.MEM_TOTAL
+               , A.MEM_AVG
+               , A.MEM_MAX
+               , A.MEM_U_AVG
+               , A.MEM_U_MAX
+               , A.NET_TX_AVG
+               , A.NET_TX_MAX
+               , A.NET_RX_AVG
+               , A.NET_RX_MAX
+               , A.DISK_R_AVG
+               , A.DISK_R_MAX
+               , A.DISK_W_AVG
+               , A.DISK_W_MAX
+          FROM (SELECT HOUR(LOG_TM) AS TIME
+                   , AVG(CPU_AVG) AS CPU_AVG
+                   , MAX(CPU_MAX) AS CPU_MAX
+                   , MAX(MEM_TOTAL) AS MEM_TOTAL
+                   , AVG(MEM_AVG) AS MEM_AVG
+                   , MAX(MEM_MAX) AS MEM_MAX
+                   , AVG(MEM_U_AVG) AS MEM_U_AVG
+                   , MAX(MEM_U_MAX) AS MEM_U_MAX 
+                   , AVG(NET_TX_AVG) AS NET_TX_AVG
+                   , MAX(NET_TX_MAX) AS NET_TX_MAX
+                   , AVG(NET_RX_AVG) AS NET_RX_AVG
+                   , MAX(NET_RX_MAX) AS NET_RX_MAX
+                   , AVG(DISK_R_AVG) AS DISK_R_AVG
+                   , MAX(DISK_R_MAX) AS DISK_R_MAX
+                   , AVG(DISK_W_AVG) AS DISK_W_AVG
+                   , MAX(DISK_W_MAX) AS DISK_W_MAX 
+              FROM HOST_AGENT_5M_${date}
+             WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
+               AND OBJECT_HASH = #{object_hash}
+             GROUP BY HOUR(LOG_TM)) A
+         RIGHT 
+          JOIN (SELECT HOUR(TIME) AS TIME
+                       , (SELECT OBJECT_NAME FROM AGENT_INFO_TBL WHERE OBJECT_HASH = #{object_hash}) AS OBJECT_NAME
+                  FROM TIME_TBL
+                 GROUP BY HOUR(TIME)) B
+            ON A.TIME = B.TIME
+    </select>
+    
+    <select id="selectJavaHourlyStat" parameterMap="ymd" resultType="scouter.plugin.server.reporting.vo.JavaAgent">
+        SELECT TRIM(CHAR(B.TIME)) || ':00' AS TIME
+               , B.OBJECT_NAME
+               , A.ACTIVE_SERVICE_AVG
+               , A.ACTIVE_SERVICE_MAX
+               , A.HEAP_TOTAL
+               , A.HEAP_USED_AVG
+               , A.HEAP_USED_MAX
+               , A.RECENT_USER_AVG
+               , A.RECENT_USER_MAX
+               , A.SERVICE_COUNT_AVG
+               , A.SERVICE_COUNT_MAX
+               , A.API_TPS_AVG
+               , A.API_TPS_MAX
+               , A.SQL_TPS_AVG
+               , A.SQL_TPS_MAX
+               , A.TPS_AVG
+               , A.TPS_MAX
+          FROM (SELECT HOUR(LOG_TM) AS TIME
+                       , AVG(ACTIVE_SERVICE_AVG) AS ACTIVE_SERVICE_AVG
+                       , MAX(ACTIVE_SERVICE_MAX) AS ACTIVE_SERVICE_MAX
+                       , MAX(HEAP_TOTAL) AS HEAP_TOTAL
+                       , AVG(HEAP_USED_AVG) AS HEAP_USED_AVG
+                       , MAX(HEAP_USED_MAX) AS HEAP_USED_MAX
+                       , AVG(RECENT_USER_AVG) AS RECENT_USER_AVG
+                       , MAX(RECENT_USER_MAX) AS RECENT_USER_MAX 
+                       , AVG(SERVICE_COUNT_AVG) AS SERVICE_COUNT_AVG
+                       , MAX(SERVICE_COUNT_MAX) AS SERVICE_COUNT_MAX
+                       , AVG(API_TPS_AVG) AS API_TPS_AVG
+                       , MAX(API_TPS_MAX) AS API_TPS_MAX
+                       , AVG(SQL_TPS_AVG) AS SQL_TPS_AVG
+                       , MAX(SQL_TPS_MAX) AS SQL_TPS_MAX
+                       , AVG(TPS_AVG) AS TPS_AVG
+                       , MAX(TPS_MAX) AS TPS_MAX 
+              FROM JAVA_AGENT_5M_${date}
+             WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
+               AND OBJECT_HASH = #{object_hash}
+             GROUP BY HOUR(LOG_TM)) A
+         RIGHT 
+          JOIN (SELECT HOUR(TIME) AS TIME
+                       , (SELECT OBJECT_NAME FROM AGENT_INFO_TBL WHERE OBJECT_HASH = #{object_hash}) AS OBJECT_NAME
+                  FROM TIME_TBL
+                 GROUP BY HOUR(TIME)) B
+            ON A.TIME = B.TIME
+    </select>
+    
+    <select id="selectServiceHourlyStat" parameterMap="ymd" resultType="scouter.plugin.server.reporting.vo.Service">
+        SELECT TRIM(CHAR(B.TIME)) || ':00' AS TIME
+               , '${app_id}' AS APP_ID
+               , A.SERVICE_HASH
+		       , B.SERVICE_NAME
+               , A.ELAPSED_AVG
+               , A.ELAPSED_MAX
+               , A.SQL_COUNT_AVG
+               , A.SQL_COUNT_MAX
+               , A.SQL_TIME_AVG
+               , A.SQL_TIME_MAX
+               , A.REQUEST_COUNT
+               , A.ERROR_COUNT
+               , A.ELAPSED_EXCEED_COUNT
+               , (SELECT COUNT(DISTINCT(B.IP_ADDRESS)) 
+                    FROM IP_ADDRESS_5M_${date} B 
+                   WHERE A.SERVICE_HASH = B.SERVICE_HASH 
+                     AND A.LOG_DT = B.LOG_DT
+                     AND A.TIME = HOUR(B.LOG_TM)) AS IP_COUNT
+               , (SELECT COUNT(DISTINCT(B.USER_AGENT)) 
+                    FROM USER_AGENT_5M_${date} B 
+                   WHERE A.SERVICE_HASH = B.SERVICE_HASH 
+                     AND A.LOG_DT = B.LOG_DT
+                     AND A.TIME = HOUR(B.LOG_TM)) AS UA_COUNT
+          FROM (SELECT HOUR(LOG_TM) AS TIME
+                       , MAX(LOG_DT) AS LOG_DT
+                       , MAX(SERVICE_HASH) AS SERVICE_HASH
+                       , MAX(SERVICE_NAME) AS SERVICE_NAME
+                       , AVG(ELAPSED_AVG) AS ELAPSED_AVG
+                       , MAX(ELAPSED_MAX) AS ELAPSED_MAX
+                       , AVG(SQL_COUNT_AVG) AS SQL_COUNT_AVG
+                       , MAX(SQL_COUNT_MAX) AS SQL_COUNT_MAX
+                       , AVG(SQL_TIME_AVG) AS SQL_TIME_AVG
+                       , MAX(SQL_TIME_MAX) AS SQL_TIME_MAX 
+                       , SUM(REQUEST_COUNT) AS REQUEST_COUNT
+                       , SUM(ERROR_COUNT) AS ERROR_COUNT
+                       , SUM(ELAPSED_EXCEED_COUNT) AS ELAPSED_EXCEED_COUNT
+              FROM SERVICE_5M_${date}
+             WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
+		       AND SERVICE_HASH = #{service_hash}
+               AND OBJECT_HASH IN (SELECT OBJECT_HASH FROM AGENT_INFO_TBL WHERE SUBSTR(OBJECT_NAME, 2) LIKE '%${app_id}-%')
+             GROUP BY HOUR(LOG_TM)) A
+         RIGHT 
+          JOIN (SELECT HOUR(TIME) AS TIME
+                       , (SELECT DISTINCT(SERVICE_NAME) FROM SERVICE_5M_${date} WHERE SERVICE_HASH = #{service_hash}) AS SERVICE_NAME
+                  FROM TIME_TBL
+                 GROUP BY HOUR(TIME)) B
+            ON A.TIME = B.TIME
+    </select>
+    
+    <select id="selectAlert" parameterMap="ymd" resultType="scouter.plugin.server.reporting.vo.Alert">
+        SELECT B.OBJECT_NAME
+               , A.LOG_DT AS DAY
+               , A.LOG_TM AS TIME
+               , A.LEVEL
+               , A.TITLE
+               , A.MESSAGE
+          FROM ALERT_${date} A JOIN AGENT_INFO_TBL B
+            ON A.OBJECT_HASH = B.OBJECT_HASH
+         WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
+         ORDER BY A.LOG_TM
+    </select>
+    
+    <select id="selectApplicationOperationStat" parameterMap="ymd" resultType="scouter.plugin.server.reporting.vo.Service">
+		SELECT '${year}-${month}' AS DAY
+		       , APP_ID
+		       , SERVICE_HASH
+		       , MAX(SERVICE_NAME) AS SERVICE_NAME
+		       , AVG(ELAPSED_AVG) AS ELAPSED_AVG
+		       , MAX(ELAPSED_MAX) AS ELAPSED_MAX
+		       , SUM(REQUEST_COUNT) AS REQUEST_COUNT
+		       , SUM(ERROR_COUNT) AS ERROR_COUNT
+		       , SUM(ELAPSED_EXCEED_COUNT) AS ELAPSED_EXCEED_COUNT 
+		  FROM (SELECT SERVICE_HASH
+		               , SUBSTR(MAX(OBJECT_NAME)
+		                        , LOCATE('/', MAX(OBJECT_NAME), 2) + 1
+		                        , ((LOCATE('-', MAX(OBJECT_NAME), LOCATE('/', MAX(OBJECT_NAME), 2) + 1) + 1) - (LOCATE('/', MAX(OBJECT_NAME), 2) + 1) - 1)) AS APP_ID
+		               , MAX(SERVICE_NAME) AS SERVICE_NAME
+		               , AVG(ELAPSED_AVG) AS ELAPSED_AVG
+		               , MAX(ELAPSED_MAX) AS ELAPSED_MAX
+		               , SUM(REQUEST_COUNT) AS REQUEST_COUNT
+		               , SUM(ERROR_COUNT) AS ERROR_COUNT
+		               , SUM(ELAPSED_EXCEED_COUNT) AS ELAPSED_EXCEED_COUNT
+		          FROM SERVICE_5M_01 A JOIN AGENT_INFO_TBL B
+		            ON A.OBJECT_HASH = B.OBJECT_HASH
+		         WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
+		         GROUP BY OBJECT_NAME, SERVICE_HASH
+		         UNION
+		        SELECT SERVICE_HASH
+		               , SUBSTR(MAX(OBJECT_NAME)
+		                        , LOCATE('/', MAX(OBJECT_NAME), 2) + 1
+		                        , ((LOCATE('-', MAX(OBJECT_NAME), LOCATE('/', MAX(OBJECT_NAME), 2) + 1) + 1) - (LOCATE('/', MAX(OBJECT_NAME), 2) + 1) - 1)) AS APP_ID
+		               , MAX(SERVICE_NAME) AS SERVICE_NAME
+		               , AVG(ELAPSED_AVG) AS ELAPSED_AVG
+		               , MAX(ELAPSED_MAX) AS ELAPSED_MAX
+		               , SUM(REQUEST_COUNT) AS REQUEST_COUNT
+		               , SUM(ERROR_COUNT) AS ERROR_COUNT
+		               , SUM(ELAPSED_EXCEED_COUNT) AS ELAPSED_EXCEED_COUNT
+		          FROM SERVICE_5M_02 A JOIN AGENT_INFO_TBL B
+		            ON A.OBJECT_HASH = B.OBJECT_HASH
+		         WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
+		         GROUP BY OBJECT_NAME, SERVICE_HASH
+		         UNION
+		        SELECT SERVICE_HASH
+		               , SUBSTR(MAX(OBJECT_NAME)
+		                        , LOCATE('/', MAX(OBJECT_NAME), 2) + 1
+		                        , ((LOCATE('-', MAX(OBJECT_NAME), LOCATE('/', MAX(OBJECT_NAME), 2) + 1) + 1) - (LOCATE('/', MAX(OBJECT_NAME), 2) + 1) - 1)) AS APP_ID
+		               , MAX(SERVICE_NAME) AS SERVICE_NAME
+		               , AVG(ELAPSED_AVG) AS ELAPSED_AVG
+		               , MAX(ELAPSED_MAX) AS ELAPSED_MAX
+		               , SUM(REQUEST_COUNT) AS REQUEST_COUNT
+		               , SUM(ERROR_COUNT) AS ERROR_COUNT
+		               , SUM(ELAPSED_EXCEED_COUNT) AS ELAPSED_EXCEED_COUNT
+		          FROM SERVICE_5M_03 A JOIN AGENT_INFO_TBL B
+		            ON A.OBJECT_HASH = B.OBJECT_HASH
+		         WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
+		         GROUP BY OBJECT_NAME, SERVICE_HASH
+		         UNION
+		        SELECT SERVICE_HASH
+		               , SUBSTR(MAX(OBJECT_NAME)
+		                        , LOCATE('/', MAX(OBJECT_NAME), 2) + 1
+		                        , ((LOCATE('-', MAX(OBJECT_NAME), LOCATE('/', MAX(OBJECT_NAME), 2) + 1) + 1) - (LOCATE('/', MAX(OBJECT_NAME), 2) + 1) - 1)) AS APP_ID
+		               , MAX(SERVICE_NAME) AS SERVICE_NAME
+		               , AVG(ELAPSED_AVG) AS ELAPSED_AVG
+		               , MAX(ELAPSED_MAX) AS ELAPSED_MAX
+		               , SUM(REQUEST_COUNT) AS REQUEST_COUNT
+		               , SUM(ERROR_COUNT) AS ERROR_COUNT
+		               , SUM(ELAPSED_EXCEED_COUNT) AS ELAPSED_EXCEED_COUNT
+		          FROM SERVICE_5M_04 A JOIN AGENT_INFO_TBL B
+		            ON A.OBJECT_HASH = B.OBJECT_HASH
+		         WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
+		         GROUP BY OBJECT_NAME, SERVICE_HASH
+		         UNION
+		        SELECT SERVICE_HASH
+		               , SUBSTR(MAX(OBJECT_NAME)
+		                        , LOCATE('/', MAX(OBJECT_NAME), 2) + 1
+		                        , ((LOCATE('-', MAX(OBJECT_NAME), LOCATE('/', MAX(OBJECT_NAME), 2) + 1) + 1) - (LOCATE('/', MAX(OBJECT_NAME), 2) + 1) - 1)) AS APP_ID
+		               , MAX(SERVICE_NAME) AS SERVICE_NAME
+		               , AVG(ELAPSED_AVG) AS ELAPSED_AVG
+		               , MAX(ELAPSED_MAX) AS ELAPSED_MAX
+		               , SUM(REQUEST_COUNT) AS REQUEST_COUNT
+		               , SUM(ERROR_COUNT) AS ERROR_COUNT
+		               , SUM(ELAPSED_EXCEED_COUNT) AS ELAPSED_EXCEED_COUNT
+		          FROM SERVICE_5M_05 A JOIN AGENT_INFO_TBL B
+		            ON A.OBJECT_HASH = B.OBJECT_HASH
+		         WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
+		         GROUP BY OBJECT_NAME, SERVICE_HASH
+		         UNION
+		        SELECT SERVICE_HASH
+		               , SUBSTR(MAX(OBJECT_NAME)
+		                        , LOCATE('/', MAX(OBJECT_NAME), 2) + 1
+		                        , ((LOCATE('-', MAX(OBJECT_NAME), LOCATE('/', MAX(OBJECT_NAME), 2) + 1) + 1) - (LOCATE('/', MAX(OBJECT_NAME), 2) + 1) - 1)) AS APP_ID
+		               , MAX(SERVICE_NAME) AS SERVICE_NAME
+		               , AVG(ELAPSED_AVG) AS ELAPSED_AVG
+		               , MAX(ELAPSED_MAX) AS ELAPSED_MAX
+		               , SUM(REQUEST_COUNT) AS REQUEST_COUNT
+		               , SUM(ERROR_COUNT) AS ERROR_COUNT
+		               , SUM(ELAPSED_EXCEED_COUNT) AS ELAPSED_EXCEED_COUNT
+		          FROM SERVICE_5M_06 A JOIN AGENT_INFO_TBL B
+		            ON A.OBJECT_HASH = B.OBJECT_HASH
+		         WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
+		         GROUP BY OBJECT_NAME, SERVICE_HASH
+		         UNION
+		        SELECT SERVICE_HASH
+		               , SUBSTR(MAX(OBJECT_NAME)
+		                        , LOCATE('/', MAX(OBJECT_NAME), 2) + 1
+		                        , ((LOCATE('-', MAX(OBJECT_NAME), LOCATE('/', MAX(OBJECT_NAME), 2) + 1) + 1) - (LOCATE('/', MAX(OBJECT_NAME), 2) + 1) - 1)) AS APP_ID
+		               , MAX(SERVICE_NAME) AS SERVICE_NAME
+		               , AVG(ELAPSED_AVG) AS ELAPSED_AVG
+		               , MAX(ELAPSED_MAX) AS ELAPSED_MAX
+		               , SUM(REQUEST_COUNT) AS REQUEST_COUNT
+		               , SUM(ERROR_COUNT) AS ERROR_COUNT
+		               , SUM(ELAPSED_EXCEED_COUNT) AS ELAPSED_EXCEED_COUNT
+		          FROM SERVICE_5M_07 A JOIN AGENT_INFO_TBL B
+		            ON A.OBJECT_HASH = B.OBJECT_HASH
+		         WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
+		         GROUP BY OBJECT_NAME, SERVICE_HASH
+		         UNION
+		        SELECT SERVICE_HASH
+		               , SUBSTR(MAX(OBJECT_NAME)
+		                        , LOCATE('/', MAX(OBJECT_NAME), 2) + 1
+		                        , ((LOCATE('-', MAX(OBJECT_NAME), LOCATE('/', MAX(OBJECT_NAME), 2) + 1) + 1) - (LOCATE('/', MAX(OBJECT_NAME), 2) + 1) - 1)) AS APP_ID
+		               , MAX(SERVICE_NAME) AS SERVICE_NAME
+		               , AVG(ELAPSED_AVG) AS ELAPSED_AVG
+		               , MAX(ELAPSED_MAX) AS ELAPSED_MAX
+		               , SUM(REQUEST_COUNT) AS REQUEST_COUNT
+		               , SUM(ERROR_COUNT) AS ERROR_COUNT
+		               , SUM(ELAPSED_EXCEED_COUNT) AS ELAPSED_EXCEED_COUNT
+		          FROM SERVICE_5M_08 A JOIN AGENT_INFO_TBL B
+		            ON A.OBJECT_HASH = B.OBJECT_HASH
+		         WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
+		         GROUP BY OBJECT_NAME, SERVICE_HASH
+		         UNION
+		        SELECT SERVICE_HASH
+		               , SUBSTR(MAX(OBJECT_NAME)
+		                        , LOCATE('/', MAX(OBJECT_NAME), 2) + 1
+		                        , ((LOCATE('-', MAX(OBJECT_NAME), LOCATE('/', MAX(OBJECT_NAME), 2) + 1) + 1) - (LOCATE('/', MAX(OBJECT_NAME), 2) + 1) - 1)) AS APP_ID
+		               , MAX(SERVICE_NAME) AS SERVICE_NAME
+		               , AVG(ELAPSED_AVG) AS ELAPSED_AVG
+		               , MAX(ELAPSED_MAX) AS ELAPSED_MAX
+		               , SUM(REQUEST_COUNT) AS REQUEST_COUNT
+		               , SUM(ERROR_COUNT) AS ERROR_COUNT
+		               , SUM(ELAPSED_EXCEED_COUNT) AS ELAPSED_EXCEED_COUNT
+		          FROM SERVICE_5M_09 A JOIN AGENT_INFO_TBL B
+		            ON A.OBJECT_HASH = B.OBJECT_HASH
+		         WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
+		         GROUP BY OBJECT_NAME, SERVICE_HASH
+		         UNION
+		        SELECT SERVICE_HASH
+		               , SUBSTR(MAX(OBJECT_NAME)
+		                        , LOCATE('/', MAX(OBJECT_NAME), 2) + 1
+		                        , ((LOCATE('-', MAX(OBJECT_NAME), LOCATE('/', MAX(OBJECT_NAME), 2) + 1) + 1) - (LOCATE('/', MAX(OBJECT_NAME), 2) + 1) - 1)) AS APP_ID
+		               , MAX(SERVICE_NAME) AS SERVICE_NAME
+		               , AVG(ELAPSED_AVG) AS ELAPSED_AVG
+		               , MAX(ELAPSED_MAX) AS ELAPSED_MAX
+		               , SUM(REQUEST_COUNT) AS REQUEST_COUNT
+		               , SUM(ERROR_COUNT) AS ERROR_COUNT
+		               , SUM(ELAPSED_EXCEED_COUNT) AS ELAPSED_EXCEED_COUNT
+		          FROM SERVICE_5M_10 A JOIN AGENT_INFO_TBL B
+		            ON A.OBJECT_HASH = B.OBJECT_HASH
+		         WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
+		         GROUP BY OBJECT_NAME, SERVICE_HASH
+		         UNION
+		        SELECT SERVICE_HASH
+		               , SUBSTR(MAX(OBJECT_NAME)
+		                        , LOCATE('/', MAX(OBJECT_NAME), 2) + 1
+		                        , ((LOCATE('-', MAX(OBJECT_NAME), LOCATE('/', MAX(OBJECT_NAME), 2) + 1) + 1) - (LOCATE('/', MAX(OBJECT_NAME), 2) + 1) - 1)) AS APP_ID
+		               , MAX(SERVICE_NAME) AS SERVICE_NAME
+		               , AVG(ELAPSED_AVG) AS ELAPSED_AVG
+		               , MAX(ELAPSED_MAX) AS ELAPSED_MAX
+		               , SUM(REQUEST_COUNT) AS REQUEST_COUNT
+		               , SUM(ERROR_COUNT) AS ERROR_COUNT
+		               , SUM(ELAPSED_EXCEED_COUNT) AS ELAPSED_EXCEED_COUNT
+		          FROM SERVICE_5M_11 A JOIN AGENT_INFO_TBL B
+		            ON A.OBJECT_HASH = B.OBJECT_HASH
+		         WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
+		         GROUP BY OBJECT_NAME, SERVICE_HASH
+		         UNION
+		        SELECT SERVICE_HASH
+		               , SUBSTR(MAX(OBJECT_NAME)
+		                        , LOCATE('/', MAX(OBJECT_NAME), 2) + 1
+		                        , ((LOCATE('-', MAX(OBJECT_NAME), LOCATE('/', MAX(OBJECT_NAME), 2) + 1) + 1) - (LOCATE('/', MAX(OBJECT_NAME), 2) + 1) - 1)) AS APP_ID
+		               , MAX(SERVICE_NAME) AS SERVICE_NAME
+		               , AVG(ELAPSED_AVG) AS ELAPSED_AVG
+		               , MAX(ELAPSED_MAX) AS ELAPSED_MAX
+		               , SUM(REQUEST_COUNT) AS REQUEST_COUNT
+		               , SUM(ERROR_COUNT) AS ERROR_COUNT
+		               , SUM(ELAPSED_EXCEED_COUNT) AS ELAPSED_EXCEED_COUNT
+		          FROM SERVICE_5M_12 A JOIN AGENT_INFO_TBL B
+		            ON A.OBJECT_HASH = B.OBJECT_HASH
+		         WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
+		         GROUP BY OBJECT_NAME, SERVICE_HASH
+		         UNION
+		        SELECT SERVICE_HASH
+		               , SUBSTR(MAX(OBJECT_NAME)
+		                        , LOCATE('/', MAX(OBJECT_NAME), 2) + 1
+		                        , ((LOCATE('-', MAX(OBJECT_NAME), LOCATE('/', MAX(OBJECT_NAME), 2) + 1) + 1) - (LOCATE('/', MAX(OBJECT_NAME), 2) + 1) - 1)) AS APP_ID
+		               , MAX(SERVICE_NAME) AS SERVICE_NAME
+		               , AVG(ELAPSED_AVG) AS ELAPSED_AVG
+		               , MAX(ELAPSED_MAX) AS ELAPSED_MAX
+		               , SUM(REQUEST_COUNT) AS REQUEST_COUNT
+		               , SUM(ERROR_COUNT) AS ERROR_COUNT
+		               , SUM(ELAPSED_EXCEED_COUNT) AS ELAPSED_EXCEED_COUNT
+		          FROM SERVICE_5M_13 A JOIN AGENT_INFO_TBL B
+		            ON A.OBJECT_HASH = B.OBJECT_HASH
+		         WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
+		         GROUP BY OBJECT_NAME, SERVICE_HASH
+		         UNION
+		        SELECT SERVICE_HASH
+		               , SUBSTR(MAX(OBJECT_NAME)
+		                        , LOCATE('/', MAX(OBJECT_NAME), 2) + 1
+		                        , ((LOCATE('-', MAX(OBJECT_NAME), LOCATE('/', MAX(OBJECT_NAME), 2) + 1) + 1) - (LOCATE('/', MAX(OBJECT_NAME), 2) + 1) - 1)) AS APP_ID
+		               , MAX(SERVICE_NAME) AS SERVICE_NAME
+		               , AVG(ELAPSED_AVG) AS ELAPSED_AVG
+		               , MAX(ELAPSED_MAX) AS ELAPSED_MAX
+		               , SUM(REQUEST_COUNT) AS REQUEST_COUNT
+		               , SUM(ERROR_COUNT) AS ERROR_COUNT
+		               , SUM(ELAPSED_EXCEED_COUNT) AS ELAPSED_EXCEED_COUNT
+		          FROM SERVICE_5M_14 A JOIN AGENT_INFO_TBL B
+		            ON A.OBJECT_HASH = B.OBJECT_HASH
+		         WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
+		         GROUP BY OBJECT_NAME, SERVICE_HASH
+		         UNION
+		        SELECT SERVICE_HASH
+		               , SUBSTR(MAX(OBJECT_NAME)
+		                        , LOCATE('/', MAX(OBJECT_NAME), 2) + 1
+		                        , ((LOCATE('-', MAX(OBJECT_NAME), LOCATE('/', MAX(OBJECT_NAME), 2) + 1) + 1) - (LOCATE('/', MAX(OBJECT_NAME), 2) + 1) - 1)) AS APP_ID
+		               , MAX(SERVICE_NAME) AS SERVICE_NAME
+		               , AVG(ELAPSED_AVG) AS ELAPSED_AVG
+		               , MAX(ELAPSED_MAX) AS ELAPSED_MAX
+		               , SUM(REQUEST_COUNT) AS REQUEST_COUNT
+		               , SUM(ERROR_COUNT) AS ERROR_COUNT
+		               , SUM(ELAPSED_EXCEED_COUNT) AS ELAPSED_EXCEED_COUNT
+		          FROM SERVICE_5M_15 A JOIN AGENT_INFO_TBL B
+		            ON A.OBJECT_HASH = B.OBJECT_HASH
+		         WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
+		         GROUP BY OBJECT_NAME, SERVICE_HASH
+		         UNION
+		        SELECT SERVICE_HASH
+		               , SUBSTR(MAX(OBJECT_NAME)
+		                        , LOCATE('/', MAX(OBJECT_NAME), 2) + 1
+		                        , ((LOCATE('-', MAX(OBJECT_NAME), LOCATE('/', MAX(OBJECT_NAME), 2) + 1) + 1) - (LOCATE('/', MAX(OBJECT_NAME), 2) + 1) - 1)) AS APP_ID
+		               , MAX(SERVICE_NAME) AS SERVICE_NAME
+		               , AVG(ELAPSED_AVG) AS ELAPSED_AVG
+		               , MAX(ELAPSED_MAX) AS ELAPSED_MAX
+		               , SUM(REQUEST_COUNT) AS REQUEST_COUNT
+		               , SUM(ERROR_COUNT) AS ERROR_COUNT
+		               , SUM(ELAPSED_EXCEED_COUNT) AS ELAPSED_EXCEED_COUNT
+		          FROM SERVICE_5M_16 A JOIN AGENT_INFO_TBL B
+		            ON A.OBJECT_HASH = B.OBJECT_HASH
+		         WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
+		         GROUP BY OBJECT_NAME, SERVICE_HASH
+		         UNION
+		        SELECT SERVICE_HASH
+		               , SUBSTR(MAX(OBJECT_NAME)
+		                        , LOCATE('/', MAX(OBJECT_NAME), 2) + 1
+		                        , ((LOCATE('-', MAX(OBJECT_NAME), LOCATE('/', MAX(OBJECT_NAME), 2) + 1) + 1) - (LOCATE('/', MAX(OBJECT_NAME), 2) + 1) - 1)) AS APP_ID
+		               , MAX(SERVICE_NAME) AS SERVICE_NAME
+		               , AVG(ELAPSED_AVG) AS ELAPSED_AVG
+		               , MAX(ELAPSED_MAX) AS ELAPSED_MAX
+		               , SUM(REQUEST_COUNT) AS REQUEST_COUNT
+		               , SUM(ERROR_COUNT) AS ERROR_COUNT
+		               , SUM(ELAPSED_EXCEED_COUNT) AS ELAPSED_EXCEED_COUNT
+		          FROM SERVICE_5M_17 A JOIN AGENT_INFO_TBL B
+		            ON A.OBJECT_HASH = B.OBJECT_HASH
+		         WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
+		         GROUP BY OBJECT_NAME, SERVICE_HASH
+		         UNION
+		        SELECT SERVICE_HASH
+		               , SUBSTR(MAX(OBJECT_NAME)
+		                        , LOCATE('/', MAX(OBJECT_NAME), 2) + 1
+		                        , ((LOCATE('-', MAX(OBJECT_NAME), LOCATE('/', MAX(OBJECT_NAME), 2) + 1) + 1) - (LOCATE('/', MAX(OBJECT_NAME), 2) + 1) - 1)) AS APP_ID
+		               , MAX(SERVICE_NAME) AS SERVICE_NAME
+		               , AVG(ELAPSED_AVG) AS ELAPSED_AVG
+		               , MAX(ELAPSED_MAX) AS ELAPSED_MAX
+		               , SUM(REQUEST_COUNT) AS REQUEST_COUNT
+		               , SUM(ERROR_COUNT) AS ERROR_COUNT
+		               , SUM(ELAPSED_EXCEED_COUNT) AS ELAPSED_EXCEED_COUNT
+		          FROM SERVICE_5M_18 A JOIN AGENT_INFO_TBL B
+		            ON A.OBJECT_HASH = B.OBJECT_HASH
+		         WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
+		         GROUP BY OBJECT_NAME, SERVICE_HASH
+		         UNION
+		        SELECT SERVICE_HASH
+		               , SUBSTR(MAX(OBJECT_NAME)
+		                        , LOCATE('/', MAX(OBJECT_NAME), 2) + 1
+		                        , ((LOCATE('-', MAX(OBJECT_NAME), LOCATE('/', MAX(OBJECT_NAME), 2) + 1) + 1) - (LOCATE('/', MAX(OBJECT_NAME), 2) + 1) - 1)) AS APP_ID
+		               , MAX(SERVICE_NAME) AS SERVICE_NAME
+		               , AVG(ELAPSED_AVG) AS ELAPSED_AVG
+		               , MAX(ELAPSED_MAX) AS ELAPSED_MAX
+		               , SUM(REQUEST_COUNT) AS REQUEST_COUNT
+		               , SUM(ERROR_COUNT) AS ERROR_COUNT
+		               , SUM(ELAPSED_EXCEED_COUNT) AS ELAPSED_EXCEED_COUNT
+		          FROM SERVICE_5M_19 A JOIN AGENT_INFO_TBL B
+		            ON A.OBJECT_HASH = B.OBJECT_HASH
+		         WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
+		         GROUP BY OBJECT_NAME, SERVICE_HASH
+		         UNION
+		        SELECT SERVICE_HASH
+		               , SUBSTR(MAX(OBJECT_NAME)
+		                        , LOCATE('/', MAX(OBJECT_NAME), 2) + 1
+		                        , ((LOCATE('-', MAX(OBJECT_NAME), LOCATE('/', MAX(OBJECT_NAME), 2) + 1) + 1) - (LOCATE('/', MAX(OBJECT_NAME), 2) + 1) - 1)) AS APP_ID
+		               , MAX(SERVICE_NAME) AS SERVICE_NAME
+		               , AVG(ELAPSED_AVG) AS ELAPSED_AVG
+		               , MAX(ELAPSED_MAX) AS ELAPSED_MAX
+		               , SUM(REQUEST_COUNT) AS REQUEST_COUNT
+		               , SUM(ERROR_COUNT) AS ERROR_COUNT
+		               , SUM(ELAPSED_EXCEED_COUNT) AS ELAPSED_EXCEED_COUNT
+		          FROM SERVICE_5M_20 A JOIN AGENT_INFO_TBL B
+		            ON A.OBJECT_HASH = B.OBJECT_HASH
+		         WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
+		         GROUP BY OBJECT_NAME, SERVICE_HASH
+		         UNION
+		        SELECT SERVICE_HASH
+		               , SUBSTR(MAX(OBJECT_NAME)
+		                        , LOCATE('/', MAX(OBJECT_NAME), 2) + 1
+		                        , ((LOCATE('-', MAX(OBJECT_NAME), LOCATE('/', MAX(OBJECT_NAME), 2) + 1) + 1) - (LOCATE('/', MAX(OBJECT_NAME), 2) + 1) - 1)) AS APP_ID
+		               , MAX(SERVICE_NAME) AS SERVICE_NAME
+		               , AVG(ELAPSED_AVG) AS ELAPSED_AVG
+		               , MAX(ELAPSED_MAX) AS ELAPSED_MAX
+		               , SUM(REQUEST_COUNT) AS REQUEST_COUNT
+		               , SUM(ERROR_COUNT) AS ERROR_COUNT
+		               , SUM(ELAPSED_EXCEED_COUNT) AS ELAPSED_EXCEED_COUNT
+		          FROM SERVICE_5M_21 A JOIN AGENT_INFO_TBL B
+		            ON A.OBJECT_HASH = B.OBJECT_HASH
+		         WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
+		         GROUP BY OBJECT_NAME, SERVICE_HASH
+		         UNION
+		        SELECT SERVICE_HASH
+		               , SUBSTR(MAX(OBJECT_NAME)
+		                        , LOCATE('/', MAX(OBJECT_NAME), 2) + 1
+		                        , ((LOCATE('-', MAX(OBJECT_NAME), LOCATE('/', MAX(OBJECT_NAME), 2) + 1) + 1) - (LOCATE('/', MAX(OBJECT_NAME), 2) + 1) - 1)) AS APP_ID
+		               , MAX(SERVICE_NAME) AS SERVICE_NAME
+		               , AVG(ELAPSED_AVG) AS ELAPSED_AVG
+		               , MAX(ELAPSED_MAX) AS ELAPSED_MAX
+		               , SUM(REQUEST_COUNT) AS REQUEST_COUNT
+		               , SUM(ERROR_COUNT) AS ERROR_COUNT
+		               , SUM(ELAPSED_EXCEED_COUNT) AS ELAPSED_EXCEED_COUNT
+		          FROM SERVICE_5M_22 A JOIN AGENT_INFO_TBL B
+		            ON A.OBJECT_HASH = B.OBJECT_HASH
+		         WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
+		         GROUP BY OBJECT_NAME, SERVICE_HASH
+		         UNION
+		        SELECT SERVICE_HASH
+		               , SUBSTR(MAX(OBJECT_NAME)
+		                        , LOCATE('/', MAX(OBJECT_NAME), 2) + 1
+		                        , ((LOCATE('-', MAX(OBJECT_NAME), LOCATE('/', MAX(OBJECT_NAME), 2) + 1) + 1) - (LOCATE('/', MAX(OBJECT_NAME), 2) + 1) - 1)) AS APP_ID
+		               , MAX(SERVICE_NAME) AS SERVICE_NAME
+		               , AVG(ELAPSED_AVG) AS ELAPSED_AVG
+		               , MAX(ELAPSED_MAX) AS ELAPSED_MAX
+		               , SUM(REQUEST_COUNT) AS REQUEST_COUNT
+		               , SUM(ERROR_COUNT) AS ERROR_COUNT
+		               , SUM(ELAPSED_EXCEED_COUNT) AS ELAPSED_EXCEED_COUNT
+		          FROM SERVICE_5M_23 A JOIN AGENT_INFO_TBL B
+		            ON A.OBJECT_HASH = B.OBJECT_HASH
+		         WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
+		         GROUP BY OBJECT_NAME, SERVICE_HASH
+		         UNION
+		        SELECT SERVICE_HASH
+		               , SUBSTR(MAX(OBJECT_NAME)
+		                        , LOCATE('/', MAX(OBJECT_NAME), 2) + 1
+		                        , ((LOCATE('-', MAX(OBJECT_NAME), LOCATE('/', MAX(OBJECT_NAME), 2) + 1) + 1) - (LOCATE('/', MAX(OBJECT_NAME), 2) + 1) - 1)) AS APP_ID
+		               , MAX(SERVICE_NAME) AS SERVICE_NAME
+		               , AVG(ELAPSED_AVG) AS ELAPSED_AVG
+		               , MAX(ELAPSED_MAX) AS ELAPSED_MAX
+		               , SUM(REQUEST_COUNT) AS REQUEST_COUNT
+		               , SUM(ERROR_COUNT) AS ERROR_COUNT
+		               , SUM(ELAPSED_EXCEED_COUNT) AS ELAPSED_EXCEED_COUNT
+		          FROM SERVICE_5M_24 A JOIN AGENT_INFO_TBL B
+		            ON A.OBJECT_HASH = B.OBJECT_HASH
+		         WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
+		         GROUP BY OBJECT_NAME, SERVICE_HASH
+		         UNION
+		        SELECT SERVICE_HASH
+		               , SUBSTR(MAX(OBJECT_NAME)
+		                        , LOCATE('/', MAX(OBJECT_NAME), 2) + 1
+		                        , ((LOCATE('-', MAX(OBJECT_NAME), LOCATE('/', MAX(OBJECT_NAME), 2) + 1) + 1) - (LOCATE('/', MAX(OBJECT_NAME), 2) + 1) - 1)) AS APP_ID
+		               , MAX(SERVICE_NAME) AS SERVICE_NAME
+		               , AVG(ELAPSED_AVG) AS ELAPSED_AVG
+		               , MAX(ELAPSED_MAX) AS ELAPSED_MAX
+		               , SUM(REQUEST_COUNT) AS REQUEST_COUNT
+		               , SUM(ERROR_COUNT) AS ERROR_COUNT
+		               , SUM(ELAPSED_EXCEED_COUNT) AS ELAPSED_EXCEED_COUNT
+		          FROM SERVICE_5M_25 A JOIN AGENT_INFO_TBL B
+		            ON A.OBJECT_HASH = B.OBJECT_HASH
+		         WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
+		         GROUP BY OBJECT_NAME, SERVICE_HASH
+		         UNION
+		        SELECT SERVICE_HASH
+		               , SUBSTR(MAX(OBJECT_NAME)
+		                        , LOCATE('/', MAX(OBJECT_NAME), 2) + 1
+		                        , ((LOCATE('-', MAX(OBJECT_NAME), LOCATE('/', MAX(OBJECT_NAME), 2) + 1) + 1) - (LOCATE('/', MAX(OBJECT_NAME), 2) + 1) - 1)) AS APP_ID
+		               , MAX(SERVICE_NAME) AS SERVICE_NAME
+		               , AVG(ELAPSED_AVG) AS ELAPSED_AVG
+		               , MAX(ELAPSED_MAX) AS ELAPSED_MAX
+		               , SUM(REQUEST_COUNT) AS REQUEST_COUNT
+		               , SUM(ERROR_COUNT) AS ERROR_COUNT
+		               , SUM(ELAPSED_EXCEED_COUNT) AS ELAPSED_EXCEED_COUNT
+		          FROM SERVICE_5M_26 A JOIN AGENT_INFO_TBL B
+		            ON A.OBJECT_HASH = B.OBJECT_HASH
+		         WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
+		         GROUP BY OBJECT_NAME, SERVICE_HASH
+		         UNION
+		        SELECT SERVICE_HASH
+		               , SUBSTR(MAX(OBJECT_NAME)
+		                        , LOCATE('/', MAX(OBJECT_NAME), 2) + 1
+		                        , ((LOCATE('-', MAX(OBJECT_NAME), LOCATE('/', MAX(OBJECT_NAME), 2) + 1) + 1) - (LOCATE('/', MAX(OBJECT_NAME), 2) + 1) - 1)) AS APP_ID
+		               , MAX(SERVICE_NAME) AS SERVICE_NAME
+		               , AVG(ELAPSED_AVG) AS ELAPSED_AVG
+		               , MAX(ELAPSED_MAX) AS ELAPSED_MAX
+		               , SUM(REQUEST_COUNT) AS REQUEST_COUNT
+		               , SUM(ERROR_COUNT) AS ERROR_COUNT
+		               , SUM(ELAPSED_EXCEED_COUNT) AS ELAPSED_EXCEED_COUNT
+		          FROM SERVICE_5M_27 A JOIN AGENT_INFO_TBL B
+		            ON A.OBJECT_HASH = B.OBJECT_HASH
+		         WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
+		         GROUP BY OBJECT_NAME, SERVICE_HASH
+		         UNION
+		        SELECT SERVICE_HASH
+		               , SUBSTR(MAX(OBJECT_NAME)
+		                        , LOCATE('/', MAX(OBJECT_NAME), 2) + 1
+		                        , ((LOCATE('-', MAX(OBJECT_NAME), LOCATE('/', MAX(OBJECT_NAME), 2) + 1) + 1) - (LOCATE('/', MAX(OBJECT_NAME), 2) + 1) - 1)) AS APP_ID
+		               , MAX(SERVICE_NAME) AS SERVICE_NAME
+		               , AVG(ELAPSED_AVG) AS ELAPSED_AVG
+		               , MAX(ELAPSED_MAX) AS ELAPSED_MAX
+		               , SUM(REQUEST_COUNT) AS REQUEST_COUNT
+		               , SUM(ERROR_COUNT) AS ERROR_COUNT
+		               , SUM(ELAPSED_EXCEED_COUNT) AS ELAPSED_EXCEED_COUNT
+		          FROM SERVICE_5M_28 A JOIN AGENT_INFO_TBL B
+		            ON A.OBJECT_HASH = B.OBJECT_HASH
+		         WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
+		         GROUP BY OBJECT_NAME, SERVICE_HASH
+		         UNION
+		        SELECT SERVICE_HASH
+		               , SUBSTR(MAX(OBJECT_NAME)
+		                        , LOCATE('/', MAX(OBJECT_NAME), 2) + 1
+		                        , ((LOCATE('-', MAX(OBJECT_NAME), LOCATE('/', MAX(OBJECT_NAME), 2) + 1) + 1) - (LOCATE('/', MAX(OBJECT_NAME), 2) + 1) - 1)) AS APP_ID
+		               , MAX(SERVICE_NAME) AS SERVICE_NAME
+		               , AVG(ELAPSED_AVG) AS ELAPSED_AVG
+		               , MAX(ELAPSED_MAX) AS ELAPSED_MAX
+		               , SUM(REQUEST_COUNT) AS REQUEST_COUNT
+		               , SUM(ERROR_COUNT) AS ERROR_COUNT
+		               , SUM(ELAPSED_EXCEED_COUNT) AS ELAPSED_EXCEED_COUNT
+		          FROM SERVICE_5M_29 A JOIN AGENT_INFO_TBL B
+		            ON A.OBJECT_HASH = B.OBJECT_HASH
+		         WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
+		         GROUP BY OBJECT_NAME, SERVICE_HASH
+		         UNION
+		        SELECT SERVICE_HASH
+		               , SUBSTR(MAX(OBJECT_NAME)
+		                        , LOCATE('/', MAX(OBJECT_NAME), 2) + 1
+		                        , ((LOCATE('-', MAX(OBJECT_NAME), LOCATE('/', MAX(OBJECT_NAME), 2) + 1) + 1) - (LOCATE('/', MAX(OBJECT_NAME), 2) + 1) - 1)) AS APP_ID
+		               , MAX(SERVICE_NAME) AS SERVICE_NAME
+		               , AVG(ELAPSED_AVG) AS ELAPSED_AVG
+		               , MAX(ELAPSED_MAX) AS ELAPSED_MAX
+		               , SUM(REQUEST_COUNT) AS REQUEST_COUNT
+		               , SUM(ERROR_COUNT) AS ERROR_COUNT
+		               , SUM(ELAPSED_EXCEED_COUNT) AS ELAPSED_EXCEED_COUNT
+		          FROM SERVICE_5M_30 A JOIN AGENT_INFO_TBL B
+		            ON A.OBJECT_HASH = B.OBJECT_HASH
+		         WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
+		         GROUP BY OBJECT_NAME, SERVICE_HASH
+		         UNION
+		        SELECT SERVICE_HASH
+		               , SUBSTR(MAX(OBJECT_NAME)
+		                        , LOCATE('/', MAX(OBJECT_NAME), 2) + 1
+		                        , ((LOCATE('-', MAX(OBJECT_NAME), LOCATE('/', MAX(OBJECT_NAME), 2) + 1) + 1) - (LOCATE('/', MAX(OBJECT_NAME), 2) + 1) - 1)) AS APP_ID
+		               , MAX(SERVICE_NAME) AS SERVICE_NAME
+		               , AVG(ELAPSED_AVG) AS ELAPSED_AVG
+		               , MAX(ELAPSED_MAX) AS ELAPSED_MAX
+		               , SUM(REQUEST_COUNT) AS REQUEST_COUNT
+		               , SUM(ERROR_COUNT) AS ERROR_COUNT
+		               , SUM(ELAPSED_EXCEED_COUNT) AS ELAPSED_EXCEED_COUNT
+		          FROM SERVICE_5M_31 A JOIN AGENT_INFO_TBL B
+		            ON A.OBJECT_HASH = B.OBJECT_HASH
+		         WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
+		         GROUP BY OBJECT_NAME, SERVICE_HASH) A
+		 GROUP BY APP_ID, SERVICE_HASH
+		 ORDER BY REQUEST_COUNT DESC
+		 FETCH NEXT 10 ROWS ONLY
+    </select>
+    
+    <select id="selectApplicationOperationStatPrev" parameterMap="ymd" resultType="scouter.plugin.server.reporting.vo.Service">
+		SELECT SUM(REQUEST_COUNT) AS REQUEST_COUNT
+		       , AVG(ELAPSED_AVG) AS ELAPSED_AVG
+		  FROM (SELECT SUM(REQUEST_COUNT) AS REQUEST_COUNT
+		               , AVG(ELAPSED_AVG) AS ELAPSED_AVG
+		          FROM SERVICE_5M_01 A JOIN AGENT_INFO_TBL B
+		            ON A.OBJECT_HASH = B.OBJECT_HASH
+		         WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
+		           AND A.SERVICE_HASH = #{service_hash}
+		           AND OBJECT_NAME LIKE '%${app_id}-%'
+		         GROUP BY OBJECT_NAME, SERVICE_HASH
+		         UNION
+		        SELECT SUM(REQUEST_COUNT) AS REQUEST_COUNT
+		               , AVG(ELAPSED_AVG) AS ELAPSED_AVG
+		          FROM SERVICE_5M_02 A JOIN AGENT_INFO_TBL B
+		            ON A.OBJECT_HASH = B.OBJECT_HASH
+		         WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
+		           AND A.SERVICE_HASH = #{service_hash}
+		           AND OBJECT_NAME LIKE '%${app_id}-%'
+		         GROUP BY OBJECT_NAME, SERVICE_HASH
+		         UNION
+		        SELECT SUM(REQUEST_COUNT) AS REQUEST_COUNT
+		               , AVG(ELAPSED_AVG) AS ELAPSED_AVG
+		          FROM SERVICE_5M_03 A JOIN AGENT_INFO_TBL B
+		            ON A.OBJECT_HASH = B.OBJECT_HASH
+		         WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
+		           AND A.SERVICE_HASH = #{service_hash}
+		           AND OBJECT_NAME LIKE '%${app_id}-%'
+		         GROUP BY OBJECT_NAME, SERVICE_HASH
+		         UNION
+		        SELECT SUM(REQUEST_COUNT) AS REQUEST_COUNT
+		               , AVG(ELAPSED_AVG) AS ELAPSED_AVG
+		          FROM SERVICE_5M_04 A JOIN AGENT_INFO_TBL B
+		            ON A.OBJECT_HASH = B.OBJECT_HASH
+		         WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
+		         GROUP BY OBJECT_NAME, SERVICE_HASH
+		         UNION
+		        SELECT SUM(REQUEST_COUNT) AS REQUEST_COUNT
+		               , AVG(ELAPSED_AVG) AS ELAPSED_AVG
+		          FROM SERVICE_5M_05 A JOIN AGENT_INFO_TBL B
+		            ON A.OBJECT_HASH = B.OBJECT_HASH
+		         WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
+		           AND A.SERVICE_HASH = #{service_hash}
+		           AND OBJECT_NAME LIKE '%${app_id}-%'
+		         GROUP BY OBJECT_NAME, SERVICE_HASH
+		         UNION
+		        SELECT SUM(REQUEST_COUNT) AS REQUEST_COUNT
+		               , AVG(ELAPSED_AVG) AS ELAPSED_AVG
+		          FROM SERVICE_5M_06 A JOIN AGENT_INFO_TBL B
+		            ON A.OBJECT_HASH = B.OBJECT_HASH
+		         WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
+		           AND A.SERVICE_HASH = #{service_hash}
+		           AND OBJECT_NAME LIKE '%${app_id}-%'
+		         GROUP BY OBJECT_NAME, SERVICE_HASH
+		         UNION
+		        SELECT SUM(REQUEST_COUNT) AS REQUEST_COUNT
+		               , AVG(ELAPSED_AVG) AS ELAPSED_AVG
+		          FROM SERVICE_5M_07 A JOIN AGENT_INFO_TBL B
+		            ON A.OBJECT_HASH = B.OBJECT_HASH
+		         WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
+		           AND A.SERVICE_HASH = #{service_hash}
+		           AND OBJECT_NAME LIKE '%${app_id}-%'
+		         GROUP BY OBJECT_NAME, SERVICE_HASH
+		         UNION
+		        SELECT SUM(REQUEST_COUNT) AS REQUEST_COUNT
+		               , AVG(ELAPSED_AVG) AS ELAPSED_AVG
+		          FROM SERVICE_5M_08 A JOIN AGENT_INFO_TBL B
+		            ON A.OBJECT_HASH = B.OBJECT_HASH
+		         WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
+		           AND A.SERVICE_HASH = #{service_hash}
+		           AND OBJECT_NAME LIKE '%${app_id}-%'
+		         GROUP BY OBJECT_NAME, SERVICE_HASH
+		         UNION
+		        SELECT SUM(REQUEST_COUNT) AS REQUEST_COUNT
+		               , AVG(ELAPSED_AVG) AS ELAPSED_AVG
+		          FROM SERVICE_5M_09 A JOIN AGENT_INFO_TBL B
+		            ON A.OBJECT_HASH = B.OBJECT_HASH
+		         WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
+		           AND A.SERVICE_HASH = #{service_hash}
+		           AND OBJECT_NAME LIKE '%${app_id}-%'
+		         GROUP BY OBJECT_NAME, SERVICE_HASH
+		         UNION
+		        SELECT SUM(REQUEST_COUNT) AS REQUEST_COUNT
+		               , AVG(ELAPSED_AVG) AS ELAPSED_AVG
+		          FROM SERVICE_5M_10 A JOIN AGENT_INFO_TBL B
+		            ON A.OBJECT_HASH = B.OBJECT_HASH
+		         WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
+		           AND A.SERVICE_HASH = #{service_hash}
+		           AND OBJECT_NAME LIKE '%${app_id}-%'
+		         GROUP BY OBJECT_NAME, SERVICE_HASH
+		         UNION
+		        SELECT SUM(REQUEST_COUNT) AS REQUEST_COUNT
+		               , AVG(ELAPSED_AVG) AS ELAPSED_AVG
+		          FROM SERVICE_5M_11 A JOIN AGENT_INFO_TBL B
+		            ON A.OBJECT_HASH = B.OBJECT_HASH
+		         WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
+		           AND A.SERVICE_HASH = #{service_hash}
+		           AND OBJECT_NAME LIKE '%${app_id}-%'
+		         GROUP BY OBJECT_NAME, SERVICE_HASH
+		         UNION
+		        SELECT SUM(REQUEST_COUNT) AS REQUEST_COUNT
+		               , AVG(ELAPSED_AVG) AS ELAPSED_AVG
+		          FROM SERVICE_5M_12 A JOIN AGENT_INFO_TBL B
+		            ON A.OBJECT_HASH = B.OBJECT_HASH
+		         WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
+		           AND A.SERVICE_HASH = #{service_hash}
+		           AND OBJECT_NAME LIKE '%${app_id}-%'
+		         GROUP BY OBJECT_NAME, SERVICE_HASH
+		         UNION
+		        SELECT SUM(REQUEST_COUNT) AS REQUEST_COUNT
+		               , AVG(ELAPSED_AVG) AS ELAPSED_AVG
+		          FROM SERVICE_5M_13 A JOIN AGENT_INFO_TBL B
+		            ON A.OBJECT_HASH = B.OBJECT_HASH
+		         WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
+		           AND A.SERVICE_HASH = #{service_hash}
+		           AND OBJECT_NAME LIKE '%${app_id}-%'
+		         GROUP BY OBJECT_NAME, SERVICE_HASH
+		         UNION
+		        SELECT SUM(REQUEST_COUNT) AS REQUEST_COUNT
+		               , AVG(ELAPSED_AVG) AS ELAPSED_AVG
+		          FROM SERVICE_5M_14 A JOIN AGENT_INFO_TBL B
+		            ON A.OBJECT_HASH = B.OBJECT_HASH
+		         WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
+		           AND A.SERVICE_HASH = #{service_hash}
+		           AND OBJECT_NAME LIKE '%${app_id}-%'
+		         GROUP BY OBJECT_NAME, SERVICE_HASH
+		         UNION
+		        SELECT SUM(REQUEST_COUNT) AS REQUEST_COUNT
+		               , AVG(ELAPSED_AVG) AS ELAPSED_AVG
+		          FROM SERVICE_5M_15 A JOIN AGENT_INFO_TBL B
+		            ON A.OBJECT_HASH = B.OBJECT_HASH
+		         WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
+		           AND A.SERVICE_HASH = #{service_hash}
+		           AND OBJECT_NAME LIKE '%${app_id}-%'
+		         GROUP BY OBJECT_NAME, SERVICE_HASH
+		         UNION
+		        SELECT SUM(REQUEST_COUNT) AS REQUEST_COUNT
+		               , AVG(ELAPSED_AVG) AS ELAPSED_AVG
+		          FROM SERVICE_5M_16 A JOIN AGENT_INFO_TBL B
+		            ON A.OBJECT_HASH = B.OBJECT_HASH
+		         WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
+		           AND A.SERVICE_HASH = #{service_hash}
+		           AND OBJECT_NAME LIKE '%${app_id}-%'
+		         GROUP BY OBJECT_NAME, SERVICE_HASH
+		         UNION
+		        SELECT SUM(REQUEST_COUNT) AS REQUEST_COUNT
+		               , AVG(ELAPSED_AVG) AS ELAPSED_AVG
+		          FROM SERVICE_5M_17 A JOIN AGENT_INFO_TBL B
+		            ON A.OBJECT_HASH = B.OBJECT_HASH
+		         WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
+		           AND A.SERVICE_HASH = #{service_hash}
+		           AND OBJECT_NAME LIKE '%${app_id}-%'
+		         GROUP BY OBJECT_NAME, SERVICE_HASH
+		         UNION
+		        SELECT SUM(REQUEST_COUNT) AS REQUEST_COUNT
+		               , AVG(ELAPSED_AVG) AS ELAPSED_AVG
+		          FROM SERVICE_5M_18 A JOIN AGENT_INFO_TBL B
+		            ON A.OBJECT_HASH = B.OBJECT_HASH
+		         WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
+		           AND A.SERVICE_HASH = #{service_hash}
+		           AND OBJECT_NAME LIKE '%${app_id}-%'
+		         GROUP BY OBJECT_NAME, SERVICE_HASH
+		         UNION
+		        SELECT SUM(REQUEST_COUNT) AS REQUEST_COUNT
+		               , AVG(ELAPSED_AVG) AS ELAPSED_AVG
+		          FROM SERVICE_5M_19 A JOIN AGENT_INFO_TBL B
+		            ON A.OBJECT_HASH = B.OBJECT_HASH
+		         WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
+		           AND A.SERVICE_HASH = #{service_hash}
+		           AND OBJECT_NAME LIKE '%${app_id}-%'
+		         GROUP BY OBJECT_NAME, SERVICE_HASH
+		         UNION
+		        SELECT SUM(REQUEST_COUNT) AS REQUEST_COUNT
+		               , AVG(ELAPSED_AVG) AS ELAPSED_AVG
+		          FROM SERVICE_5M_20 A JOIN AGENT_INFO_TBL B
+		            ON A.OBJECT_HASH = B.OBJECT_HASH
+		         WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
+		           AND A.SERVICE_HASH = #{service_hash}
+		           AND OBJECT_NAME LIKE '%${app_id}-%'
+		         GROUP BY OBJECT_NAME, SERVICE_HASH
+		         UNION
+		        SELECT SUM(REQUEST_COUNT) AS REQUEST_COUNT
+		               , AVG(ELAPSED_AVG) AS ELAPSED_AVG
+		          FROM SERVICE_5M_21 A JOIN AGENT_INFO_TBL B
+		            ON A.OBJECT_HASH = B.OBJECT_HASH
+		         WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
+		           AND A.SERVICE_HASH = #{service_hash}
+		           AND OBJECT_NAME LIKE '%${app_id}-%'
+		         GROUP BY OBJECT_NAME, SERVICE_HASH
+		         UNION
+		        SELECT SUM(REQUEST_COUNT) AS REQUEST_COUNT
+		               , AVG(ELAPSED_AVG) AS ELAPSED_AVG
+		          FROM SERVICE_5M_22 A JOIN AGENT_INFO_TBL B
+		            ON A.OBJECT_HASH = B.OBJECT_HASH
+		         WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
+		           AND A.SERVICE_HASH = #{service_hash}
+		           AND OBJECT_NAME LIKE '%${app_id}-%'
+		         GROUP BY OBJECT_NAME, SERVICE_HASH
+		         UNION
+		        SELECT SUM(REQUEST_COUNT) AS REQUEST_COUNT
+		               , AVG(ELAPSED_AVG) AS ELAPSED_AVG
+		          FROM SERVICE_5M_23 A JOIN AGENT_INFO_TBL B
+		            ON A.OBJECT_HASH = B.OBJECT_HASH
+		         WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
+		           AND A.SERVICE_HASH = #{service_hash}
+		           AND OBJECT_NAME LIKE '%${app_id}-%'
+		         GROUP BY OBJECT_NAME, SERVICE_HASH
+		         UNION
+		        SELECT SUM(REQUEST_COUNT) AS REQUEST_COUNT
+		               , AVG(ELAPSED_AVG) AS ELAPSED_AVG
+		          FROM SERVICE_5M_24 A JOIN AGENT_INFO_TBL B
+		            ON A.OBJECT_HASH = B.OBJECT_HASH
+		         WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
+		           AND A.SERVICE_HASH = #{service_hash}
+		           AND OBJECT_NAME LIKE '%${app_id}-%'
+		         GROUP BY OBJECT_NAME, SERVICE_HASH
+		         UNION
+		        SELECT SUM(REQUEST_COUNT) AS REQUEST_COUNT
+		               , AVG(ELAPSED_AVG) AS ELAPSED_AVG
+		          FROM SERVICE_5M_25 A JOIN AGENT_INFO_TBL B
+		            ON A.OBJECT_HASH = B.OBJECT_HASH
+		         WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
+		           AND A.SERVICE_HASH = #{service_hash}
+		           AND OBJECT_NAME LIKE '%${app_id}-%'
+		         GROUP BY OBJECT_NAME, SERVICE_HASH
+		         UNION
+		        SELECT SUM(REQUEST_COUNT) AS REQUEST_COUNT
+		               , AVG(ELAPSED_AVG) AS ELAPSED_AVG
+		          FROM SERVICE_5M_26 A JOIN AGENT_INFO_TBL B
+		            ON A.OBJECT_HASH = B.OBJECT_HASH
+		         WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
+		           AND A.SERVICE_HASH = #{service_hash}
+		           AND OBJECT_NAME LIKE '%${app_id}-%'
+		         GROUP BY OBJECT_NAME, SERVICE_HASH
+		         UNION
+		        SELECT SUM(REQUEST_COUNT) AS REQUEST_COUNT
+		               , AVG(ELAPSED_AVG) AS ELAPSED_AVG
+		          FROM SERVICE_5M_27 A JOIN AGENT_INFO_TBL B
+		            ON A.OBJECT_HASH = B.OBJECT_HASH
+		         WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
+		           AND A.SERVICE_HASH = #{service_hash}
+		           AND OBJECT_NAME LIKE '%${app_id}-%'
+		         GROUP BY OBJECT_NAME, SERVICE_HASH
+		         UNION
+		        SELECT SUM(REQUEST_COUNT) AS REQUEST_COUNT
+		               , AVG(ELAPSED_AVG) AS ELAPSED_AVG
+		          FROM SERVICE_5M_28 A JOIN AGENT_INFO_TBL B
+		            ON A.OBJECT_HASH = B.OBJECT_HASH
+		         WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
+		           AND A.SERVICE_HASH = #{service_hash}
+		           AND OBJECT_NAME LIKE '%${app_id}-%'
+		         GROUP BY OBJECT_NAME, SERVICE_HASH
+		         UNION
+		        SELECT SUM(REQUEST_COUNT) AS REQUEST_COUNT
+		               , AVG(ELAPSED_AVG) AS ELAPSED_AVG
+		          FROM SERVICE_5M_29 A JOIN AGENT_INFO_TBL B
+		            ON A.OBJECT_HASH = B.OBJECT_HASH
+		         WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
+		           AND A.SERVICE_HASH = #{service_hash}
+		           AND OBJECT_NAME LIKE '%${app_id}-%'
+		         GROUP BY OBJECT_NAME, SERVICE_HASH
+		         UNION
+		        SELECT SUM(REQUEST_COUNT) AS REQUEST_COUNT
+		               , AVG(ELAPSED_AVG) AS ELAPSED_AVG
+		          FROM SERVICE_5M_30 A JOIN AGENT_INFO_TBL B
+		            ON A.OBJECT_HASH = B.OBJECT_HASH
+		         WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
+		           AND A.SERVICE_HASH = #{service_hash}
+		           AND OBJECT_NAME LIKE '%${app_id}-%'
+		         GROUP BY OBJECT_NAME, SERVICE_HASH
+		         UNION
+		        SELECT SUM(REQUEST_COUNT) AS REQUEST_COUNT
+		               , AVG(ELAPSED_AVG) AS ELAPSED_AVG
+		          FROM SERVICE_5M_31 A JOIN AGENT_INFO_TBL B
+		            ON A.OBJECT_HASH = B.OBJECT_HASH
+		         WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
+		           AND A.SERVICE_HASH = #{service_hash}
+		           AND OBJECT_NAME LIKE '%${app_id}-%'
+		         GROUP BY OBJECT_NAME, SERVICE_HASH) A
+    </select>
+    
+    <select id="selectWorstApplications" parameterMap="ymd" resultType="scouter.plugin.server.reporting.vo.Service">
+		SELECT A.APP_ID
+		       , A.SERVICE_HASH
+		       , A.SERVICE_NAME
+		       , A.ELAPSED_AVG
+		       , A.ELAPSED_MAX
+		       , A.REQUEST_COUNT
+		       , A.ERROR_COUNT
+		  FROM (SELECT APP_ID
+		               , SERVICE_HASH
+		               , MAX(SERVICE_NAME) AS SERVICE_NAME
+		               , AVG(ELAPSED_AVG) AS ELAPSED_AVG
+		               , MAX(ELAPSED_MAX) AS ELAPSED_MAX
+		               , SUM(REQUEST_COUNT) AS REQUEST_COUNT
+		               , SUM(ERROR_COUNT) AS ERROR_COUNT
+		               , (SUM(ERROR_COUNT) * 100 / SUM(REQUEST_COUNT)) AS ERROR_RATE
+		          FROM (SELECT SERVICE_HASH
+		                       , SUBSTR(MAX(OBJECT_NAME)
+		                                , LOCATE('/', MAX(OBJECT_NAME), 2) + 1
+		                                , ((LOCATE('-', MAX(OBJECT_NAME), LOCATE('/', MAX(OBJECT_NAME), 2) + 1) + 1) - (LOCATE('/', MAX(OBJECT_NAME), 2) + 1) - 1)) AS APP_ID
+		                       , MAX(SERVICE_NAME) AS SERVICE_NAME
+		                       , AVG(ELAPSED_AVG) AS ELAPSED_AVG
+		                       , MAX(ELAPSED_MAX) AS ELAPSED_MAX
+		                       , SUM(REQUEST_COUNT) AS REQUEST_COUNT
+		                       , SUM(ERROR_COUNT) AS ERROR_COUNT
+		                  FROM SERVICE_5M_01 A JOIN AGENT_INFO_TBL B
+		                    ON A.OBJECT_HASH = B.OBJECT_HASH
+		                 WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
+		                 GROUP BY OBJECT_NAME, SERVICE_HASH
+		                 UNION
+		                SELECT SERVICE_HASH
+		                       , SUBSTR(MAX(OBJECT_NAME)
+		                                , LOCATE('/', MAX(OBJECT_NAME), 2) + 1
+		                                , ((LOCATE('-', MAX(OBJECT_NAME), LOCATE('/', MAX(OBJECT_NAME), 2) + 1) + 1) - (LOCATE('/', MAX(OBJECT_NAME), 2) + 1) - 1)) AS APP_ID
+		                       , MAX(SERVICE_NAME) AS SERVICE_NAME
+		                       , AVG(ELAPSED_AVG) AS ELAPSED_AVG
+		                       , MAX(ELAPSED_MAX) AS ELAPSED_MAX
+		                       , SUM(REQUEST_COUNT) AS REQUEST_COUNT
+		                       , SUM(ERROR_COUNT) AS ERROR_COUNT
+		                  FROM SERVICE_5M_02 A JOIN AGENT_INFO_TBL B
+		                    ON A.OBJECT_HASH = B.OBJECT_HASH
+		                 WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
+		                 GROUP BY OBJECT_NAME, SERVICE_HASH
+		                 UNION
+		                SELECT SERVICE_HASH
+		                       , SUBSTR(MAX(OBJECT_NAME)
+		                                , LOCATE('/', MAX(OBJECT_NAME), 2) + 1
+		                                , ((LOCATE('-', MAX(OBJECT_NAME), LOCATE('/', MAX(OBJECT_NAME), 2) + 1) + 1) - (LOCATE('/', MAX(OBJECT_NAME), 2) + 1) - 1)) AS APP_ID
+		                       , MAX(SERVICE_NAME) AS SERVICE_NAME
+		                       , AVG(ELAPSED_AVG) AS ELAPSED_AVG
+		                       , MAX(ELAPSED_MAX) AS ELAPSED_MAX
+		                       , SUM(REQUEST_COUNT) AS REQUEST_COUNT
+		                       , SUM(ERROR_COUNT) AS ERROR_COUNT
+		                  FROM SERVICE_5M_03 A JOIN AGENT_INFO_TBL B
+		                    ON A.OBJECT_HASH = B.OBJECT_HASH
+		                 WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
+		                 GROUP BY OBJECT_NAME, SERVICE_HASH
+		                 UNION
+		                SELECT SERVICE_HASH
+		                       , SUBSTR(MAX(OBJECT_NAME)
+		                                , LOCATE('/', MAX(OBJECT_NAME), 2) + 1
+		                                , ((LOCATE('-', MAX(OBJECT_NAME), LOCATE('/', MAX(OBJECT_NAME), 2) + 1) + 1) - (LOCATE('/', MAX(OBJECT_NAME), 2) + 1) - 1)) AS APP_ID
+		                       , MAX(SERVICE_NAME) AS SERVICE_NAME
+		                       , AVG(ELAPSED_AVG) AS ELAPSED_AVG
+		                       , MAX(ELAPSED_MAX) AS ELAPSED_MAX
+		                       , SUM(REQUEST_COUNT) AS REQUEST_COUNT
+		                       , SUM(ERROR_COUNT) AS ERROR_COUNT
+		                  FROM SERVICE_5M_04 A JOIN AGENT_INFO_TBL B
+		                    ON A.OBJECT_HASH = B.OBJECT_HASH
+		                 WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
+		                 GROUP BY OBJECT_NAME, SERVICE_HASH
+		                 UNION
+		                SELECT SERVICE_HASH
+		                       , SUBSTR(MAX(OBJECT_NAME)
+		                                , LOCATE('/', MAX(OBJECT_NAME), 2) + 1
+		                                , ((LOCATE('-', MAX(OBJECT_NAME), LOCATE('/', MAX(OBJECT_NAME), 2) + 1) + 1) - (LOCATE('/', MAX(OBJECT_NAME), 2) + 1) - 1)) AS APP_ID
+		                       , MAX(SERVICE_NAME) AS SERVICE_NAME
+		                       , AVG(ELAPSED_AVG) AS ELAPSED_AVG
+		                       , MAX(ELAPSED_MAX) AS ELAPSED_MAX
+		                       , SUM(REQUEST_COUNT) AS REQUEST_COUNT
+		                       , SUM(ERROR_COUNT) AS ERROR_COUNT
+		                  FROM SERVICE_5M_05 A JOIN AGENT_INFO_TBL B
+		                    ON A.OBJECT_HASH = B.OBJECT_HASH
+		                 WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
+		                 GROUP BY OBJECT_NAME, SERVICE_HASH
+		                 UNION
+		                SELECT SERVICE_HASH
+		                       , SUBSTR(MAX(OBJECT_NAME)
+		                                , LOCATE('/', MAX(OBJECT_NAME), 2) + 1
+		                                , ((LOCATE('-', MAX(OBJECT_NAME), LOCATE('/', MAX(OBJECT_NAME), 2) + 1) + 1) - (LOCATE('/', MAX(OBJECT_NAME), 2) + 1) - 1)) AS APP_ID
+		                       , MAX(SERVICE_NAME) AS SERVICE_NAME
+		                       , AVG(ELAPSED_AVG) AS ELAPSED_AVG
+		                       , MAX(ELAPSED_MAX) AS ELAPSED_MAX
+		                       , SUM(REQUEST_COUNT) AS REQUEST_COUNT
+		                       , SUM(ERROR_COUNT) AS ERROR_COUNT
+		                  FROM SERVICE_5M_06 A JOIN AGENT_INFO_TBL B
+		                    ON A.OBJECT_HASH = B.OBJECT_HASH
+		                 WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
+		                 GROUP BY OBJECT_NAME, SERVICE_HASH
+		                 UNION
+		                SELECT SERVICE_HASH
+		                       , SUBSTR(MAX(OBJECT_NAME)
+		                                , LOCATE('/', MAX(OBJECT_NAME), 2) + 1
+		                                , ((LOCATE('-', MAX(OBJECT_NAME), LOCATE('/', MAX(OBJECT_NAME), 2) + 1) + 1) - (LOCATE('/', MAX(OBJECT_NAME), 2) + 1) - 1)) AS APP_ID
+		                       , MAX(SERVICE_NAME) AS SERVICE_NAME
+		                       , AVG(ELAPSED_AVG) AS ELAPSED_AVG
+		                       , MAX(ELAPSED_MAX) AS ELAPSED_MAX
+		                       , SUM(REQUEST_COUNT) AS REQUEST_COUNT
+		                       , SUM(ERROR_COUNT) AS ERROR_COUNT
+		                  FROM SERVICE_5M_07 A JOIN AGENT_INFO_TBL B
+		                    ON A.OBJECT_HASH = B.OBJECT_HASH
+		                 WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
+		                 GROUP BY OBJECT_NAME, SERVICE_HASH
+		                 UNION
+		                SELECT SERVICE_HASH
+		                       , SUBSTR(MAX(OBJECT_NAME)
+		                                , LOCATE('/', MAX(OBJECT_NAME), 2) + 1
+		                                , ((LOCATE('-', MAX(OBJECT_NAME), LOCATE('/', MAX(OBJECT_NAME), 2) + 1) + 1) - (LOCATE('/', MAX(OBJECT_NAME), 2) + 1) - 1)) AS APP_ID
+		                       , MAX(SERVICE_NAME) AS SERVICE_NAME
+		                       , AVG(ELAPSED_AVG) AS ELAPSED_AVG
+		                       , MAX(ELAPSED_MAX) AS ELAPSED_MAX
+		                       , SUM(REQUEST_COUNT) AS REQUEST_COUNT
+		                       , SUM(ERROR_COUNT) AS ERROR_COUNT
+		                  FROM SERVICE_5M_08 A JOIN AGENT_INFO_TBL B
+		                    ON A.OBJECT_HASH = B.OBJECT_HASH
+		                 WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
+		                 GROUP BY OBJECT_NAME, SERVICE_HASH
+		                 UNION
+		                SELECT SERVICE_HASH
+		                       , SUBSTR(MAX(OBJECT_NAME)
+		                                , LOCATE('/', MAX(OBJECT_NAME), 2) + 1
+		                                , ((LOCATE('-', MAX(OBJECT_NAME), LOCATE('/', MAX(OBJECT_NAME), 2) + 1) + 1) - (LOCATE('/', MAX(OBJECT_NAME), 2) + 1) - 1)) AS APP_ID
+		                       , MAX(SERVICE_NAME) AS SERVICE_NAME
+		                       , AVG(ELAPSED_AVG) AS ELAPSED_AVG
+		                       , MAX(ELAPSED_MAX) AS ELAPSED_MAX
+		                       , SUM(REQUEST_COUNT) AS REQUEST_COUNT
+		                       , SUM(ERROR_COUNT) AS ERROR_COUNT
+		                  FROM SERVICE_5M_09 A JOIN AGENT_INFO_TBL B
+		                    ON A.OBJECT_HASH = B.OBJECT_HASH
+		                 WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
+		                 GROUP BY OBJECT_NAME, SERVICE_HASH
+		                 UNION
+		                SELECT SERVICE_HASH
+		                       , SUBSTR(MAX(OBJECT_NAME)
+		                                , LOCATE('/', MAX(OBJECT_NAME), 2) + 1
+		                                , ((LOCATE('-', MAX(OBJECT_NAME), LOCATE('/', MAX(OBJECT_NAME), 2) + 1) + 1) - (LOCATE('/', MAX(OBJECT_NAME), 2) + 1) - 1)) AS APP_ID
+		                       , MAX(SERVICE_NAME) AS SERVICE_NAME
+		                       , AVG(ELAPSED_AVG) AS ELAPSED_AVG
+		                       , MAX(ELAPSED_MAX) AS ELAPSED_MAX
+		                       , SUM(REQUEST_COUNT) AS REQUEST_COUNT
+		                       , SUM(ERROR_COUNT) AS ERROR_COUNT
+		                  FROM SERVICE_5M_10 A JOIN AGENT_INFO_TBL B
+		                    ON A.OBJECT_HASH = B.OBJECT_HASH
+		                 WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
+		                 GROUP BY OBJECT_NAME, SERVICE_HASH
+		                 UNION
+		                SELECT SERVICE_HASH
+		                       , SUBSTR(MAX(OBJECT_NAME)
+		                                , LOCATE('/', MAX(OBJECT_NAME), 2) + 1
+		                                , ((LOCATE('-', MAX(OBJECT_NAME), LOCATE('/', MAX(OBJECT_NAME), 2) + 1) + 1) - (LOCATE('/', MAX(OBJECT_NAME), 2) + 1) - 1)) AS APP_ID
+		                       , MAX(SERVICE_NAME) AS SERVICE_NAME
+		                       , AVG(ELAPSED_AVG) AS ELAPSED_AVG
+		                       , MAX(ELAPSED_MAX) AS ELAPSED_MAX
+		                       , SUM(REQUEST_COUNT) AS REQUEST_COUNT
+		                       , SUM(ERROR_COUNT) AS ERROR_COUNT
+		                  FROM SERVICE_5M_11 A JOIN AGENT_INFO_TBL B
+		                    ON A.OBJECT_HASH = B.OBJECT_HASH
+		                 WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
+		                 GROUP BY OBJECT_NAME, SERVICE_HASH
+		                 UNION
+		                SELECT SERVICE_HASH
+		                       , SUBSTR(MAX(OBJECT_NAME)
+		                                , LOCATE('/', MAX(OBJECT_NAME), 2) + 1
+		                                , ((LOCATE('-', MAX(OBJECT_NAME), LOCATE('/', MAX(OBJECT_NAME), 2) + 1) + 1) - (LOCATE('/', MAX(OBJECT_NAME), 2) + 1) - 1)) AS APP_ID
+		                       , MAX(SERVICE_NAME) AS SERVICE_NAME
+		                       , AVG(ELAPSED_AVG) AS ELAPSED_AVG
+		                       , MAX(ELAPSED_MAX) AS ELAPSED_MAX
+		                       , SUM(REQUEST_COUNT) AS REQUEST_COUNT
+		                       , SUM(ERROR_COUNT) AS ERROR_COUNT
+		                  FROM SERVICE_5M_12 A JOIN AGENT_INFO_TBL B
+		                    ON A.OBJECT_HASH = B.OBJECT_HASH
+		                 WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
+		                 GROUP BY OBJECT_NAME, SERVICE_HASH
+		                 UNION
+		                SELECT SERVICE_HASH
+		                       , SUBSTR(MAX(OBJECT_NAME)
+		                                , LOCATE('/', MAX(OBJECT_NAME), 2) + 1
+		                                , ((LOCATE('-', MAX(OBJECT_NAME), LOCATE('/', MAX(OBJECT_NAME), 2) + 1) + 1) - (LOCATE('/', MAX(OBJECT_NAME), 2) + 1) - 1)) AS APP_ID
+		                       , MAX(SERVICE_NAME) AS SERVICE_NAME
+		                       , AVG(ELAPSED_AVG) AS ELAPSED_AVG
+		                       , MAX(ELAPSED_MAX) AS ELAPSED_MAX
+		                       , SUM(REQUEST_COUNT) AS REQUEST_COUNT
+		                       , SUM(ERROR_COUNT) AS ERROR_COUNT
+		                  FROM SERVICE_5M_13 A JOIN AGENT_INFO_TBL B
+		                    ON A.OBJECT_HASH = B.OBJECT_HASH
+		                 WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
+		                 GROUP BY OBJECT_NAME, SERVICE_HASH
+		                 UNION
+		                SELECT SERVICE_HASH
+		                       , SUBSTR(MAX(OBJECT_NAME)
+		                                , LOCATE('/', MAX(OBJECT_NAME), 2) + 1
+		                                , ((LOCATE('-', MAX(OBJECT_NAME), LOCATE('/', MAX(OBJECT_NAME), 2) + 1) + 1) - (LOCATE('/', MAX(OBJECT_NAME), 2) + 1) - 1)) AS APP_ID
+		                       , MAX(SERVICE_NAME) AS SERVICE_NAME
+		                       , AVG(ELAPSED_AVG) AS ELAPSED_AVG
+		                       , MAX(ELAPSED_MAX) AS ELAPSED_MAX
+		                       , SUM(REQUEST_COUNT) AS REQUEST_COUNT
+		                       , SUM(ERROR_COUNT) AS ERROR_COUNT
+		                  FROM SERVICE_5M_14 A JOIN AGENT_INFO_TBL B
+		                    ON A.OBJECT_HASH = B.OBJECT_HASH
+		                 WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
+		                 GROUP BY OBJECT_NAME, SERVICE_HASH
+		                 UNION
+		                SELECT SERVICE_HASH
+		                       , SUBSTR(MAX(OBJECT_NAME)
+		                                , LOCATE('/', MAX(OBJECT_NAME), 2) + 1
+		                                , ((LOCATE('-', MAX(OBJECT_NAME), LOCATE('/', MAX(OBJECT_NAME), 2) + 1) + 1) - (LOCATE('/', MAX(OBJECT_NAME), 2) + 1) - 1)) AS APP_ID
+		                       , MAX(SERVICE_NAME) AS SERVICE_NAME
+		                       , AVG(ELAPSED_AVG) AS ELAPSED_AVG
+		                       , MAX(ELAPSED_MAX) AS ELAPSED_MAX
+		                       , SUM(REQUEST_COUNT) AS REQUEST_COUNT
+		                       , SUM(ERROR_COUNT) AS ERROR_COUNT
+		                  FROM SERVICE_5M_15 A JOIN AGENT_INFO_TBL B
+		                    ON A.OBJECT_HASH = B.OBJECT_HASH
+		                 WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
+		                 GROUP BY OBJECT_NAME, SERVICE_HASH
+		                 UNION
+		                SELECT SERVICE_HASH
+		                       , SUBSTR(MAX(OBJECT_NAME)
+		                                , LOCATE('/', MAX(OBJECT_NAME), 2) + 1
+		                                , ((LOCATE('-', MAX(OBJECT_NAME), LOCATE('/', MAX(OBJECT_NAME), 2) + 1) + 1) - (LOCATE('/', MAX(OBJECT_NAME), 2) + 1) - 1)) AS APP_ID
+		                       , MAX(SERVICE_NAME) AS SERVICE_NAME
+		                       , AVG(ELAPSED_AVG) AS ELAPSED_AVG
+		                       , MAX(ELAPSED_MAX) AS ELAPSED_MAX
+		                       , SUM(REQUEST_COUNT) AS REQUEST_COUNT
+		                       , SUM(ERROR_COUNT) AS ERROR_COUNT
+		                  FROM SERVICE_5M_16 A JOIN AGENT_INFO_TBL B
+		                    ON A.OBJECT_HASH = B.OBJECT_HASH
+		                 WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
+		                 GROUP BY OBJECT_NAME, SERVICE_HASH
+		                 UNION
+		                SELECT SERVICE_HASH
+		                       , SUBSTR(MAX(OBJECT_NAME)
+		                                , LOCATE('/', MAX(OBJECT_NAME), 2) + 1
+		                                , ((LOCATE('-', MAX(OBJECT_NAME), LOCATE('/', MAX(OBJECT_NAME), 2) + 1) + 1) - (LOCATE('/', MAX(OBJECT_NAME), 2) + 1) - 1)) AS APP_ID
+		                       , MAX(SERVICE_NAME) AS SERVICE_NAME
+		                       , AVG(ELAPSED_AVG) AS ELAPSED_AVG
+		                       , MAX(ELAPSED_MAX) AS ELAPSED_MAX
+		                       , SUM(REQUEST_COUNT) AS REQUEST_COUNT
+		                       , SUM(ERROR_COUNT) AS ERROR_COUNT
+		                  FROM SERVICE_5M_17 A JOIN AGENT_INFO_TBL B
+		                    ON A.OBJECT_HASH = B.OBJECT_HASH
+		                 WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
+		                 GROUP BY OBJECT_NAME, SERVICE_HASH
+		                 UNION
+		                SELECT SERVICE_HASH
+		                       , SUBSTR(MAX(OBJECT_NAME)
+		                                , LOCATE('/', MAX(OBJECT_NAME), 2) + 1
+		                                , ((LOCATE('-', MAX(OBJECT_NAME), LOCATE('/', MAX(OBJECT_NAME), 2) + 1) + 1) - (LOCATE('/', MAX(OBJECT_NAME), 2) + 1) - 1)) AS APP_ID
+		                       , MAX(SERVICE_NAME) AS SERVICE_NAME
+		                       , AVG(ELAPSED_AVG) AS ELAPSED_AVG
+		                       , MAX(ELAPSED_MAX) AS ELAPSED_MAX
+		                       , SUM(REQUEST_COUNT) AS REQUEST_COUNT
+		                       , SUM(ERROR_COUNT) AS ERROR_COUNT
+		                  FROM SERVICE_5M_18 A JOIN AGENT_INFO_TBL B
+		                    ON A.OBJECT_HASH = B.OBJECT_HASH
+		                 WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
+		                 GROUP BY OBJECT_NAME, SERVICE_HASH
+		                 UNION
+		                SELECT SERVICE_HASH
+		                       , SUBSTR(MAX(OBJECT_NAME)
+		                                , LOCATE('/', MAX(OBJECT_NAME), 2) + 1
+		                                , ((LOCATE('-', MAX(OBJECT_NAME), LOCATE('/', MAX(OBJECT_NAME), 2) + 1) + 1) - (LOCATE('/', MAX(OBJECT_NAME), 2) + 1) - 1)) AS APP_ID
+		                       , MAX(SERVICE_NAME) AS SERVICE_NAME
+		                       , AVG(ELAPSED_AVG) AS ELAPSED_AVG
+		                       , MAX(ELAPSED_MAX) AS ELAPSED_MAX
+		                       , SUM(REQUEST_COUNT) AS REQUEST_COUNT
+		                       , SUM(ERROR_COUNT) AS ERROR_COUNT
+		                  FROM SERVICE_5M_19 A JOIN AGENT_INFO_TBL B
+		                    ON A.OBJECT_HASH = B.OBJECT_HASH
+		                 WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
+		                 GROUP BY OBJECT_NAME, SERVICE_HASH
+		                 UNION
+		                SELECT SERVICE_HASH
+		                       , SUBSTR(MAX(OBJECT_NAME)
+		                                , LOCATE('/', MAX(OBJECT_NAME), 2) + 1
+		                                , ((LOCATE('-', MAX(OBJECT_NAME), LOCATE('/', MAX(OBJECT_NAME), 2) + 1) + 1) - (LOCATE('/', MAX(OBJECT_NAME), 2) + 1) - 1)) AS APP_ID
+		                       , MAX(SERVICE_NAME) AS SERVICE_NAME
+		                       , AVG(ELAPSED_AVG) AS ELAPSED_AVG
+		                       , MAX(ELAPSED_MAX) AS ELAPSED_MAX
+		                       , SUM(REQUEST_COUNT) AS REQUEST_COUNT
+		                       , SUM(ERROR_COUNT) AS ERROR_COUNT
+		                  FROM SERVICE_5M_20 A JOIN AGENT_INFO_TBL B
+		                    ON A.OBJECT_HASH = B.OBJECT_HASH
+		                 WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
+		                 GROUP BY OBJECT_NAME, SERVICE_HASH
+		                 UNION
+		                SELECT SERVICE_HASH
+		                       , SUBSTR(MAX(OBJECT_NAME)
+		                                , LOCATE('/', MAX(OBJECT_NAME), 2) + 1
+		                                , ((LOCATE('-', MAX(OBJECT_NAME), LOCATE('/', MAX(OBJECT_NAME), 2) + 1) + 1) - (LOCATE('/', MAX(OBJECT_NAME), 2) + 1) - 1)) AS APP_ID
+		                       , MAX(SERVICE_NAME) AS SERVICE_NAME
+		                       , AVG(ELAPSED_AVG) AS ELAPSED_AVG
+		                       , MAX(ELAPSED_MAX) AS ELAPSED_MAX
+		                       , SUM(REQUEST_COUNT) AS REQUEST_COUNT
+		                       , SUM(ERROR_COUNT) AS ERROR_COUNT
+		                  FROM SERVICE_5M_21 A JOIN AGENT_INFO_TBL B
+		                    ON A.OBJECT_HASH = B.OBJECT_HASH
+		                 WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
+		                 GROUP BY OBJECT_NAME, SERVICE_HASH
+		                 UNION
+		                SELECT SERVICE_HASH
+		                       , SUBSTR(MAX(OBJECT_NAME)
+		                                , LOCATE('/', MAX(OBJECT_NAME), 2) + 1
+		                                , ((LOCATE('-', MAX(OBJECT_NAME), LOCATE('/', MAX(OBJECT_NAME), 2) + 1) + 1) - (LOCATE('/', MAX(OBJECT_NAME), 2) + 1) - 1)) AS APP_ID
+		                       , MAX(SERVICE_NAME) AS SERVICE_NAME
+		                       , AVG(ELAPSED_AVG) AS ELAPSED_AVG
+		                       , MAX(ELAPSED_MAX) AS ELAPSED_MAX
+		                       , SUM(REQUEST_COUNT) AS REQUEST_COUNT
+		                       , SUM(ERROR_COUNT) AS ERROR_COUNT
+		                  FROM SERVICE_5M_22 A JOIN AGENT_INFO_TBL B
+		                    ON A.OBJECT_HASH = B.OBJECT_HASH
+		                 WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
+		                 GROUP BY OBJECT_NAME, SERVICE_HASH
+		                 UNION
+		                SELECT SERVICE_HASH
+		                       , SUBSTR(MAX(OBJECT_NAME)
+		                                , LOCATE('/', MAX(OBJECT_NAME), 2) + 1
+		                                , ((LOCATE('-', MAX(OBJECT_NAME), LOCATE('/', MAX(OBJECT_NAME), 2) + 1) + 1) - (LOCATE('/', MAX(OBJECT_NAME), 2) + 1) - 1)) AS APP_ID
+		                       , MAX(SERVICE_NAME) AS SERVICE_NAME
+		                       , AVG(ELAPSED_AVG) AS ELAPSED_AVG
+		                       , MAX(ELAPSED_MAX) AS ELAPSED_MAX
+		                       , SUM(REQUEST_COUNT) AS REQUEST_COUNT
+		                       , SUM(ERROR_COUNT) AS ERROR_COUNT
+		                  FROM SERVICE_5M_23 A JOIN AGENT_INFO_TBL B
+		                    ON A.OBJECT_HASH = B.OBJECT_HASH
+		                 WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
+		                 GROUP BY OBJECT_NAME, SERVICE_HASH
+		                 UNION
+		                SELECT SERVICE_HASH
+		                       , SUBSTR(MAX(OBJECT_NAME)
+		                                , LOCATE('/', MAX(OBJECT_NAME), 2) + 1
+		                                , ((LOCATE('-', MAX(OBJECT_NAME), LOCATE('/', MAX(OBJECT_NAME), 2) + 1) + 1) - (LOCATE('/', MAX(OBJECT_NAME), 2) + 1) - 1)) AS APP_ID
+		                       , MAX(SERVICE_NAME) AS SERVICE_NAME
+		                       , AVG(ELAPSED_AVG) AS ELAPSED_AVG
+		                       , MAX(ELAPSED_MAX) AS ELAPSED_MAX
+		                       , SUM(REQUEST_COUNT) AS REQUEST_COUNT
+		                       , SUM(ERROR_COUNT) AS ERROR_COUNT
+		                  FROM SERVICE_5M_24 A JOIN AGENT_INFO_TBL B
+		                    ON A.OBJECT_HASH = B.OBJECT_HASH
+		                 WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
+		                 GROUP BY OBJECT_NAME, SERVICE_HASH
+		                 UNION
+		                SELECT SERVICE_HASH
+		                       , SUBSTR(MAX(OBJECT_NAME)
+		                                , LOCATE('/', MAX(OBJECT_NAME), 2) + 1
+		                                , ((LOCATE('-', MAX(OBJECT_NAME), LOCATE('/', MAX(OBJECT_NAME), 2) + 1) + 1) - (LOCATE('/', MAX(OBJECT_NAME), 2) + 1) - 1)) AS APP_ID
+		                       , MAX(SERVICE_NAME) AS SERVICE_NAME
+		                       , AVG(ELAPSED_AVG) AS ELAPSED_AVG
+		                       , MAX(ELAPSED_MAX) AS ELAPSED_MAX
+		                       , SUM(REQUEST_COUNT) AS REQUEST_COUNT
+		                       , SUM(ERROR_COUNT) AS ERROR_COUNT
+		                  FROM SERVICE_5M_25 A JOIN AGENT_INFO_TBL B
+		                    ON A.OBJECT_HASH = B.OBJECT_HASH
+		                 WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
+		                 GROUP BY OBJECT_NAME, SERVICE_HASH
+		                 UNION
+		                SELECT SERVICE_HASH
+		                       , SUBSTR(MAX(OBJECT_NAME)
+		                                , LOCATE('/', MAX(OBJECT_NAME), 2) + 1
+		                                , ((LOCATE('-', MAX(OBJECT_NAME), LOCATE('/', MAX(OBJECT_NAME), 2) + 1) + 1) - (LOCATE('/', MAX(OBJECT_NAME), 2) + 1) - 1)) AS APP_ID
+		                       , MAX(SERVICE_NAME) AS SERVICE_NAME
+		                       , AVG(ELAPSED_AVG) AS ELAPSED_AVG
+		                       , MAX(ELAPSED_MAX) AS ELAPSED_MAX
+		                       , SUM(REQUEST_COUNT) AS REQUEST_COUNT
+		                       , SUM(ERROR_COUNT) AS ERROR_COUNT
+		                  FROM SERVICE_5M_26 A JOIN AGENT_INFO_TBL B
+		                    ON A.OBJECT_HASH = B.OBJECT_HASH
+		                 WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
+		                 GROUP BY OBJECT_NAME, SERVICE_HASH
+		                 UNION
+		                SELECT SERVICE_HASH
+		                       , SUBSTR(MAX(OBJECT_NAME)
+		                                , LOCATE('/', MAX(OBJECT_NAME), 2) + 1
+		                                , ((LOCATE('-', MAX(OBJECT_NAME), LOCATE('/', MAX(OBJECT_NAME), 2) + 1) + 1) - (LOCATE('/', MAX(OBJECT_NAME), 2) + 1) - 1)) AS APP_ID
+		                       , MAX(SERVICE_NAME) AS SERVICE_NAME
+		                       , AVG(ELAPSED_AVG) AS ELAPSED_AVG
+		                       , MAX(ELAPSED_MAX) AS ELAPSED_MAX
+		                       , SUM(REQUEST_COUNT) AS REQUEST_COUNT
+		                       , SUM(ERROR_COUNT) AS ERROR_COUNT
+		                  FROM SERVICE_5M_27 A JOIN AGENT_INFO_TBL B
+		                    ON A.OBJECT_HASH = B.OBJECT_HASH
+		                 WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
+		                 GROUP BY OBJECT_NAME, SERVICE_HASH
+		                 UNION
+		                SELECT SERVICE_HASH
+		                       , SUBSTR(MAX(OBJECT_NAME)
+		                                , LOCATE('/', MAX(OBJECT_NAME), 2) + 1
+		                                , ((LOCATE('-', MAX(OBJECT_NAME), LOCATE('/', MAX(OBJECT_NAME), 2) + 1) + 1) - (LOCATE('/', MAX(OBJECT_NAME), 2) + 1) - 1)) AS APP_ID
+		                       , MAX(SERVICE_NAME) AS SERVICE_NAME
+		                       , AVG(ELAPSED_AVG) AS ELAPSED_AVG
+		                       , MAX(ELAPSED_MAX) AS ELAPSED_MAX
+		                       , SUM(REQUEST_COUNT) AS REQUEST_COUNT
+		                       , SUM(ERROR_COUNT) AS ERROR_COUNT
+		                  FROM SERVICE_5M_28 A JOIN AGENT_INFO_TBL B
+		                    ON A.OBJECT_HASH = B.OBJECT_HASH
+		                 WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
+		                 GROUP BY OBJECT_NAME, SERVICE_HASH
+		                 UNION
+		                SELECT SERVICE_HASH
+		                       , SUBSTR(MAX(OBJECT_NAME)
+		                                , LOCATE('/', MAX(OBJECT_NAME), 2) + 1
+		                                , ((LOCATE('-', MAX(OBJECT_NAME), LOCATE('/', MAX(OBJECT_NAME), 2) + 1) + 1) - (LOCATE('/', MAX(OBJECT_NAME), 2) + 1) - 1)) AS APP_ID
+		                       , MAX(SERVICE_NAME) AS SERVICE_NAME
+		                       , AVG(ELAPSED_AVG) AS ELAPSED_AVG
+		                       , MAX(ELAPSED_MAX) AS ELAPSED_MAX
+		                       , SUM(REQUEST_COUNT) AS REQUEST_COUNT
+		                       , SUM(ERROR_COUNT) AS ERROR_COUNT
+		                  FROM SERVICE_5M_29 A JOIN AGENT_INFO_TBL B
+		                    ON A.OBJECT_HASH = B.OBJECT_HASH
+		                 WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
+		                 GROUP BY OBJECT_NAME, SERVICE_HASH
+		                 UNION
+		                SELECT SERVICE_HASH
+		                       , SUBSTR(MAX(OBJECT_NAME)
+		                                , LOCATE('/', MAX(OBJECT_NAME), 2) + 1
+		                                , ((LOCATE('-', MAX(OBJECT_NAME), LOCATE('/', MAX(OBJECT_NAME), 2) + 1) + 1) - (LOCATE('/', MAX(OBJECT_NAME), 2) + 1) - 1)) AS APP_ID
+		                       , MAX(SERVICE_NAME) AS SERVICE_NAME
+		                       , AVG(ELAPSED_AVG) AS ELAPSED_AVG
+		                       , MAX(ELAPSED_MAX) AS ELAPSED_MAX
+		                       , SUM(REQUEST_COUNT) AS REQUEST_COUNT
+		                       , SUM(ERROR_COUNT) AS ERROR_COUNT
+		                  FROM SERVICE_5M_30 A JOIN AGENT_INFO_TBL B
+		                    ON A.OBJECT_HASH = B.OBJECT_HASH
+		                 WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
+		                 GROUP BY OBJECT_NAME, SERVICE_HASH
+		                 UNION
+		                SELECT SERVICE_HASH
+		                       , SUBSTR(MAX(OBJECT_NAME)
+		                                , LOCATE('/', MAX(OBJECT_NAME), 2) + 1
+		                                , ((LOCATE('-', MAX(OBJECT_NAME), LOCATE('/', MAX(OBJECT_NAME), 2) + 1) + 1) - (LOCATE('/', MAX(OBJECT_NAME), 2) + 1) - 1)) AS APP_ID
+		                       , MAX(SERVICE_NAME) AS SERVICE_NAME
+		                       , AVG(ELAPSED_AVG) AS ELAPSED_AVG
+		                       , MAX(ELAPSED_MAX) AS ELAPSED_MAX
+		                       , SUM(REQUEST_COUNT) AS REQUEST_COUNT
+		                       , SUM(ERROR_COUNT) AS ERROR_COUNT
+		                  FROM SERVICE_5M_31 A JOIN AGENT_INFO_TBL B
+		                    ON A.OBJECT_HASH = B.OBJECT_HASH
+		                 WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
+		                 GROUP BY OBJECT_NAME, SERVICE_HASH) A
+		         GROUP BY APP_ID, SERVICE_HASH) A
+		  WHERE ELAPSED_AVG >= 10000 OR ERROR_RATE >= 30
+		  ORDER BY ERROR_RATE DESC, ERROR_COUNT DESC, ELAPSED_AVG DESC
+    </select>
+</mapper>

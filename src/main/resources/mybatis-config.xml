@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE configuration
+  PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-config.dtd">
+<configuration>
+    <environments default="development">
+        <environment id="development">
+            <transactionManager type="JDBC" />
+            <dataSource type="POOLED">
+                <property name="driver" value="org.apache.derby.jdbc.ClientDriver" />
+                <property name="url" value="jdbc:derby://localhost:1527/scouterDB;create=true" />
+                <!-- <property name="url" value="jdbc:derby://52.78.39.116:1527/scouterDB;create=true" /> -->
+                <!-- <property name="url" value="jdbc:derby://localhost:1527/scouterDB;create=true" /> -->
+                <property name="username" value="APP" />
+                <property name="password" value="APP" />
+                <property name="poolMaximumActiveConnections" value="50"/>
+	            <property name="poolMaximumIdleConnections" value="50"/>
+	            <property name="poolMaximumCheckoutTime" value="20000"/>
+	            <property name="poolPingEnabled" value="true"/>
+	            <property name="poolPingQuery" value="VALUES 1"/>
+	            <property name="poolPingConnectionsNotUsedFor" value="10000"/>
+	            <property name="poolTimeToWait" value="15000"/>
+            </dataSource>
+        </environment>
+    </environments>
+    <mappers>
+        <mapper resource="scouter-mapper.xml" />
+    </mappers>
+</configuration>
