@@ -32,5 +32,7 @@
 			<attribute name="maven.pomderived" value="true"/>
 		</attributes>
 	</classpathentry>
+	<classpathentry combineaccessrules="false" kind="src" path="/scouter.common"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/scouter.server"/>
 	<classpathentry kind="output" path="target/classes"/>
 </classpath>
