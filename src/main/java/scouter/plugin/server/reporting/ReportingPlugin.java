@@ -845,7 +845,7 @@ public class ReportingPlugin {
 		
     	boolean isMonthly = false;
     	
-    	//args = new String[] {"20160824"};
+    	args = new String[] {"20160926"};
 
     	if (args.length == 1) {
     		if (args[0].length() == 6) {

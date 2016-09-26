@@ -64,7 +64,7 @@
     <update id="createSqlInfo">
         CREATE TABLE SQL_INFO_TBL (
             SQL_HASH INTEGER NOT NULL,
-            SQL_STR VARCHAR(4096),
+            SQL_STR VARCHAR(32672),
             PRIMARY KEY (SQL_HASH)
         )
     </update>
