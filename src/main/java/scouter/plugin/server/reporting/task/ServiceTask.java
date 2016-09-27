@@ -54,29 +54,30 @@ public class ServiceTask implements Runnable {
 						}
 					}
 				}
-				
-				for (Service s : serviceList) {
-					// 서비스의 경우 데이터 처리에 많은 시간이 소요될 경우 다음 스케줄 시간에 해당하는 데이터도 함께 처리될 수 있으며,
-					// 그런 경우 PK 충돌이 발생할 수 있다. 따라서 현재 스케쥴 시간에 해당하는 데이터만 처리한다.
-					if (s.getLog_tm().equals(new Time(time))) {
-						try {
-							session.insert("Scouter.insertService", s);
-	
-							if (ReportingPlugin.conf.getBoolean("ext_plugin_reporting_logging_enabled", false)) {
-								Logger.println("[" + s.getObject_hash() + "," + s.getService_hash() + "] service inserted.");
-					        }
-						} catch (Exception e) {
-							Logger.printStackTrace(e);
-						}
-						
-						try {
-							session.insert("Scouter.insertIpAddress", s);
-						} catch (Exception e) {}
-						
-						try {
-							session.insert("Scouter.insertUserAgent", s);
-						} catch (Exception e) {}
+			}
+			
+			for (Service s : serviceList) {
+				// 서비스의 경우 데이터 처리에 많은 시간이 소요될 경우 다음 스케줄 시간에 해당하는 데이터도 함께 처리될 수 있으며,
+				// 그런 경우 PK 충돌이 발생할 수 있다. 따라서 현재 스케쥴 시간에 해당하는 데이터만 처리한다.
+				if (s.getLog_tm().equals(new Time(time))) {
+					try {
+						session.insert("Scouter.insertService", s);
+
+						if (ReportingPlugin.conf.getBoolean("ext_plugin_reporting_logging_enabled", false)) {
+							Logger.println("[" + s.getObject_hash() + "," + s.getService_hash() + "] service inserted.");
+				        }
+					} catch (Exception e) {
+						//Logger.printStackTrace(e);
+						Logger.println("[Duplicated] : " + s);
 					}
+					
+					try {
+						session.insert("Scouter.insertIpAddress", s);
+					} catch (Exception e) {}
+					
+					try {
+						session.insert("Scouter.insertUserAgent", s);
+					} catch (Exception e) {}
 				}
 			}
 		} catch (Exception e) {

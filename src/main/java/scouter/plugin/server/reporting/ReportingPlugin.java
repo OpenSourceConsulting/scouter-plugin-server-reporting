@@ -69,7 +69,7 @@ public class ReportingPlugin {
     private static volatile NetworkServerControl server;
 	private static SqlSession session;
 	
-	// main key is objHash, sub key is serviceName (used in PluginConstants.PLUGIN_SERVER_XLOG)
+	// main key is objHash, sub key is serviceHash (used in PluginConstants.PLUGIN_SERVER_XLOG)
 	private static Map<Integer, Map<Integer, ServiceStat>> serviceStatMap = new ConcurrentHashMap<Integer, Map<Integer, ServiceStat>>();
 	private static Map<Integer, JavaAgentStat> javaAgentStatMap = new ConcurrentHashMap<Integer, JavaAgentStat>();
 	private static Map<Integer, HostAgentStat> hostAgentStatMap = new ConcurrentHashMap<Integer, HostAgentStat>();
