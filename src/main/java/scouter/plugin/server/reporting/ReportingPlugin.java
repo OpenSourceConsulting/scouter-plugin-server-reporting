@@ -385,9 +385,9 @@ public class ReportingPlugin {
 	    	long initDelay = ((System.currentTimeMillis() / DateUtil.MILLIS_PER_FIVE_MINUTE) + 1) * DateUtil.MILLIS_PER_FIVE_MINUTE - System.currentTimeMillis();
 	    	
 	    	// intiDelay 후 5분마다 각 Task 실행
-	    	serviceTaskExecutor.scheduleAtFixedRate(new HostAgentTask(session, hostAgentStatMap), initDelay + 500, DateUtil.MILLIS_PER_FIVE_MINUTE, TimeUnit.MILLISECONDS);
-	    	serviceTaskExecutor.scheduleAtFixedRate(new JavaAgentTask(session, javaAgentStatMap), initDelay + 500, DateUtil.MILLIS_PER_FIVE_MINUTE, TimeUnit.MILLISECONDS);
-	    	serviceTaskExecutor.scheduleAtFixedRate(new ServiceTask(session, serviceStatMap), initDelay + 1000, DateUtil.MILLIS_PER_FIVE_MINUTE, TimeUnit.MILLISECONDS);
+	    	serviceTaskExecutor.scheduleAtFixedRate(new HostAgentTask(session, hostAgentStatMap), initDelay + 50, DateUtil.MILLIS_PER_FIVE_MINUTE, TimeUnit.MILLISECONDS);
+	    	serviceTaskExecutor.scheduleAtFixedRate(new JavaAgentTask(session, javaAgentStatMap), initDelay + 50, DateUtil.MILLIS_PER_FIVE_MINUTE, TimeUnit.MILLISECONDS);
+	    	serviceTaskExecutor.scheduleAtFixedRate(new ServiceTask(session, serviceStatMap), initDelay + 10, DateUtil.MILLIS_PER_FIVE_MINUTE, TimeUnit.MILLISECONDS);
 	    	
 	    	// SQL 정보는 5분 단위 SummaryPack으로부터 데이터가 수신될때 DB에 직접 Insert한다.
 	    	// Alert 정보는 AlertPack으로부터 데이터가 수신될때 DB에 직접 Insert한다.
@@ -765,7 +765,7 @@ public class ReportingPlugin {
     				sqlHash = ((Number) id.toJavaObject()).intValue();
     				sqlStr = TextRD.getString(DateUtil.yyyymmdd(pack.time), TextTypes.SQL, sqlHash);
     				
-    				if (sqlStr.length() > 32000) {
+    				if (sqlStr != null && sqlStr.length() > 32000) {
     					Logger.println("SQL String is too long to insert SQL_INFO_TBL.");
     					sqlStr = sqlStr.substring(0, 32000) + "...";
     				}

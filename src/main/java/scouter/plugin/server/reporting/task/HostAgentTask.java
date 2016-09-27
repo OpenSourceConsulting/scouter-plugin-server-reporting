@@ -47,7 +47,12 @@ public class HostAgentTask implements Runnable {
 //						if (ReportingPlugin.conf.getBoolean("ext_plugin_reporting_logging_enabled", false)) {
 //							Logger.println(new Date(time) + ":" + hostAgent);
 //				        }
-						session.insert("Scouter.insertHostAgent", hostAgent);
+						
+						try { 
+							session.insert("Scouter.insertHostAgent", hostAgent);
+						} catch (Exception e) {
+							Logger.printStackTrace(e);
+						}
 	
 						if (ReportingPlugin.conf.getBoolean("ext_plugin_reporting_logging_enabled", false)) {
 							Logger.println("[" + key + "] hostAgent inserted.");

@@ -48,7 +48,11 @@ public class JavaAgentTask implements Runnable {
 //							Logger.println(new Date(time) + ":" + javaAgent);
 //				        }
 						
-						session.insert("Scouter.insertJavaAgent", javaAgent);
+						try {
+							session.insert("Scouter.insertJavaAgent", javaAgent);
+						} catch (Exception e) {
+							Logger.printStackTrace(e);
+						}
 	
 						if (ReportingPlugin.conf.getBoolean("ext_plugin_reporting_logging_enabled", false)) {
 							Logger.println("[" + key + "] javaAgent inserted.");
