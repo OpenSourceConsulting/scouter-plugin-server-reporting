@@ -523,33 +523,48 @@
                , A.ELAPSED_EXCEED_COUNT
                , (SELECT COUNT(DISTINCT(B.IP_ADDRESS)) 
                     FROM IP_ADDRESS_5M_${date} B 
-                   WHERE A.SERVICE_HASH = B.SERVICE_HASH 
-                     AND A.LOG_DT = B.LOG_DT) AS IP_COUNT
+                   WHERE B.OBJECT_HASH IN (SELECT OBJECT_HASH FROM AGENT_INFO_TBL WHERE OBJECT_NAME LIKE '%' || A.APP_ID || '%')
+                     AND A.SERVICE_HASH = B.SERVICE_HASH
+                     AND YEAR(B.LOG_DT) = #{year} AND MONTH(B.LOG_DT) = #{month}) AS IP_COUNT
                , (SELECT COUNT(DISTINCT(B.USER_AGENT)) 
                     FROM USER_AGENT_5M_${date} B 
-                   WHERE A.SERVICE_HASH = B.SERVICE_HASH 
-                     AND A.LOG_DT = B.LOG_DT) AS UA_COUNT
-          FROM (SELECT CASE WHEN MAX(LOG_DT) IS NULL THEN '${year}-${month}-${date}' ELSE MAX(LOG_DT) END AS DAY
-                       , MAX(LOG_DT) AS LOG_DT
-                       , SERVICE_HASH
-                       , SUBSTR(MAX(OBJECT_NAME)
-                                , LOCATE('/', MAX(OBJECT_NAME), 2) + 1
-                                , ((LOCATE('-', MAX(OBJECT_NAME), LOCATE('/', MAX(OBJECT_NAME), 2) + 1) + 1) - (LOCATE('/', MAX(OBJECT_NAME), 2) + 1) - 1)) AS APP_ID
-                       , MAX(SERVICE_NAME) AS SERVICE_NAME
-                       , AVG(ELAPSED_AVG) AS ELAPSED_AVG
-                       , MAX(ELAPSED_MAX) AS ELAPSED_MAX
-                       , AVG(SQL_COUNT_AVG) AS SQL_COUNT_AVG
-                       , MAX(SQL_COUNT_MAX) AS SQL_COUNT_MAX
-                       , AVG(SQL_TIME_AVG) AS SQL_TIME_AVG
-                       , MAX(SQL_TIME_MAX) AS SQL_TIME_MAX 
-                       , SUM(REQUEST_COUNT) AS REQUEST_COUNT
-                       , SUM(ERROR_COUNT) AS ERROR_COUNT
-                       , SUM(ELAPSED_EXCEED_COUNT) AS ELAPSED_EXCEED_COUNT
-                  FROM SERVICE_5M_${date} A JOIN AGENT_INFO_TBL B
-                    ON A.OBJECT_HASH = B.OBJECT_HASH
-                 WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
-                 GROUP BY OBJECT_NAME, SERVICE_HASH
-                 ORDER BY REQUEST_COUNT DESC) A
+                   WHERE B.OBJECT_HASH IN (SELECT OBJECT_HASH FROM AGENT_INFO_TBL WHERE OBJECT_NAME LIKE '%' || A.APP_ID || '%')
+                     AND A.SERVICE_HASH = B.SERVICE_HASH
+                     AND YEAR(B.LOG_DT) = #{year} AND MONTH(B.LOG_DT) = #{month}) AS UA_COUNT
+          FROM (SELECT MAX(A.DAY) AS DAY
+                       , A.APP_ID
+                       , A.SERVICE_HASH
+                       , MAX(A.SERVICE_NAME) AS SERVICE_NAME
+                       , AVG(A.ELAPSED_AVG) AS ELAPSED_AVG
+                       , MAX(A.ELAPSED_MAX) AS ELAPSED_MAX
+                       , AVG(A.SQL_COUNT_AVG) AS SQL_COUNT_AVG
+                       , MAX(A.SQL_COUNT_MAX) AS SQL_COUNT_MAX
+                       , AVG(A.SQL_TIME_AVG) AS SQL_TIME_AVG
+                       , MAX(A.SQL_TIME_MAX) AS SQL_TIME_MAX
+                       , SUM(A.REQUEST_COUNT) AS REQUEST_COUNT
+                       , SUM(A.ERROR_COUNT) AS ERROR_COUNT
+                       , SUM(A.ELAPSED_EXCEED_COUNT) AS ELAPSED_EXCEED_COUNT
+                  FROM (SELECT CASE WHEN MAX(LOG_DT) IS NULL THEN '${year}-${month}-${date}' ELSE MAX(LOG_DT) END AS DAY
+                               , SERVICE_HASH
+                               , SUBSTR(MAX(OBJECT_NAME)
+                                        , LOCATE('/', MAX(OBJECT_NAME), 2) + 1
+                                        , ((LOCATE('-', MAX(OBJECT_NAME), LOCATE('/', MAX(OBJECT_NAME), 2) + 1) + 1) - (LOCATE('/', MAX(OBJECT_NAME), 2) + 1) - 1)) AS APP_ID
+                               , MAX(SERVICE_NAME) AS SERVICE_NAME
+                               , AVG(ELAPSED_AVG) AS ELAPSED_AVG
+                               , MAX(ELAPSED_MAX) AS ELAPSED_MAX
+                               , AVG(SQL_COUNT_AVG) AS SQL_COUNT_AVG
+                               , MAX(SQL_COUNT_MAX) AS SQL_COUNT_MAX
+                               , AVG(SQL_TIME_AVG) AS SQL_TIME_AVG
+                               , MAX(SQL_TIME_MAX) AS SQL_TIME_MAX 
+                               , SUM(REQUEST_COUNT) AS REQUEST_COUNT
+                               , SUM(ERROR_COUNT) AS ERROR_COUNT
+                               , SUM(ELAPSED_EXCEED_COUNT) AS ELAPSED_EXCEED_COUNT
+                          FROM SERVICE_5M_${date} A JOIN AGENT_INFO_TBL B
+                            ON A.OBJECT_HASH = B.OBJECT_HASH
+                         WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
+                         GROUP BY OBJECT_NAME, SERVICE_HASH) A
+                 GROUP BY A.APP_ID, A.SERVICE_HASH) A
+         ORDER BY REQUEST_COUNT DESC
     </select>
     
     <select id="selectServiceMonthSummary" parameterMap="ymd" resultType="scouter.plugin.server.reporting.vo.Service">
@@ -1172,35 +1187,40 @@
 		       , A.REQUEST_COUNT
 		       , A.ERROR_COUNT
 		       , A.ELAPSED_EXCEED_COUNT
-		       , (SELECT COUNT(DISTINCT(B.IP_ADDRESS)) 
-		            FROM IP_ADDRESS_5M_${date} B 
-		           WHERE A.SERVICE_HASH = B.SERVICE_HASH 
-		             AND A.LOG_DT = B.LOG_DT) AS IP_COUNT
-		       , (SELECT COUNT(DISTINCT(B.USER_AGENT)) 
-		            FROM USER_AGENT_5M_${date} B 
-		           WHERE A.SERVICE_HASH = B.SERVICE_HASH 
-		             AND A.LOG_DT = B.LOG_DT) AS UA_COUNT
-		  FROM (SELECT CASE WHEN MAX(LOG_DT) IS NULL THEN '${year}-${month}-${date}' ELSE MAX(LOG_DT) END AS DAY
-		               , MAX(LOG_DT) AS LOG_DT
-		               , SERVICE_HASH
-		               , SUBSTR(MAX(OBJECT_NAME)
-		                        , LOCATE('/', MAX(OBJECT_NAME), 2) + 1
-		                        , ((LOCATE('-', MAX(OBJECT_NAME), LOCATE('/', MAX(OBJECT_NAME), 2) + 1) + 1) - (LOCATE('/', MAX(OBJECT_NAME), 2) + 1) - 1)) AS APP_ID
-		               , MAX(SERVICE_NAME) AS SERVICE_NAME
-		               , AVG(ELAPSED_AVG) AS ELAPSED_AVG
-		               , MAX(ELAPSED_MAX) AS ELAPSED_MAX
-		               , AVG(SQL_COUNT_AVG) AS SQL_COUNT_AVG
-		               , MAX(SQL_COUNT_MAX) AS SQL_COUNT_MAX
-		               , AVG(SQL_TIME_AVG) AS SQL_TIME_AVG
-		               , MAX(SQL_TIME_MAX) AS SQL_TIME_MAX 
-		               , SUM(REQUEST_COUNT) AS REQUEST_COUNT
-		               , SUM(ERROR_COUNT) AS ERROR_COUNT
-		               , SUM(ELAPSED_EXCEED_COUNT) AS ELAPSED_EXCEED_COUNT
-		          FROM SERVICE_5M_${date} A JOIN AGENT_INFO_TBL B
-		            ON A.OBJECT_HASH = B.OBJECT_HASH
-		         WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
-		         GROUP BY OBJECT_NAME, SERVICE_HASH
-                 ORDER BY REQUEST_COUNT DESC) A
+		  FROM (SELECT MAX(A.DAY) AS DAY
+		               , A.APP_ID
+		               , A.SERVICE_HASH
+		               , MAX(A.SERVICE_NAME) AS SERVICE_NAME
+		               , AVG(A.ELAPSED_AVG) AS ELAPSED_AVG
+		               , MAX(A.ELAPSED_MAX) AS ELAPSED_MAX
+		               , AVG(A.SQL_COUNT_AVG) AS SQL_COUNT_AVG
+		               , MAX(A.SQL_COUNT_MAX) AS SQL_COUNT_MAX
+		               , AVG(A.SQL_TIME_AVG) AS SQL_TIME_AVG
+		               , MAX(A.SQL_TIME_MAX) AS SQL_TIME_MAX
+		               , SUM(A.REQUEST_COUNT) AS REQUEST_COUNT
+		               , SUM(A.ERROR_COUNT) AS ERROR_COUNT
+		               , SUM(A.ELAPSED_EXCEED_COUNT) AS ELAPSED_EXCEED_COUNT
+		          FROM (SELECT CASE WHEN MAX(LOG_DT) IS NULL THEN '${year}-${month}-${date}' ELSE MAX(LOG_DT) END AS DAY
+		                       , SERVICE_HASH
+		                       , SUBSTR(MAX(OBJECT_NAME)
+		                                , LOCATE('/', MAX(OBJECT_NAME), 2) + 1
+		                                , ((LOCATE('-', MAX(OBJECT_NAME), LOCATE('/', MAX(OBJECT_NAME), 2) + 1) + 1) - (LOCATE('/', MAX(OBJECT_NAME), 2) + 1) - 1)) AS APP_ID
+		                       , MAX(SERVICE_NAME) AS SERVICE_NAME
+		                       , AVG(ELAPSED_AVG) AS ELAPSED_AVG
+		                       , MAX(ELAPSED_MAX) AS ELAPSED_MAX
+		                       , AVG(SQL_COUNT_AVG) AS SQL_COUNT_AVG
+		                       , MAX(SQL_COUNT_MAX) AS SQL_COUNT_MAX
+		                       , AVG(SQL_TIME_AVG) AS SQL_TIME_AVG
+		                       , MAX(SQL_TIME_MAX) AS SQL_TIME_MAX 
+		                       , SUM(REQUEST_COUNT) AS REQUEST_COUNT
+		                       , SUM(ERROR_COUNT) AS ERROR_COUNT
+		                       , SUM(ELAPSED_EXCEED_COUNT) AS ELAPSED_EXCEED_COUNT
+		                  FROM SERVICE_5M_${date} A JOIN AGENT_INFO_TBL B
+		                    ON A.OBJECT_HASH = B.OBJECT_HASH
+		                 WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) = #{month}
+		                 GROUP BY OBJECT_NAME, SERVICE_HASH) A
+		         GROUP BY A.APP_ID, A.SERVICE_HASH) A
+		 ORDER BY REQUEST_COUNT DESC
     </select>
     
     <select id="selectHostHourlyStat" parameterMap="ymd" resultType="scouter.plugin.server.reporting.vo.HostAgent">
@@ -1311,12 +1331,14 @@
                , A.ELAPSED_EXCEED_COUNT
                , (SELECT COUNT(DISTINCT(B.IP_ADDRESS)) 
                     FROM IP_ADDRESS_5M_${date} B 
-                   WHERE A.SERVICE_HASH = B.SERVICE_HASH 
+                   WHERE B.OBJECT_HASH IN (SELECT OBJECT_HASH FROM AGENT_INFO_TBL WHERE OBJECT_NAME LIKE '%${app_id}-%')
+                     AND A.SERVICE_HASH = B.SERVICE_HASH 
                      AND A.LOG_DT = B.LOG_DT
                      AND A.TIME = HOUR(B.LOG_TM)) AS IP_COUNT
                , (SELECT COUNT(DISTINCT(B.USER_AGENT)) 
                     FROM USER_AGENT_5M_${date} B 
-                   WHERE A.SERVICE_HASH = B.SERVICE_HASH 
+                   WHERE B.OBJECT_HASH IN (SELECT OBJECT_HASH FROM AGENT_INFO_TBL WHERE OBJECT_NAME LIKE '%${app_id}-%')
+                     AND A.SERVICE_HASH = B.SERVICE_HASH 
                      AND A.LOG_DT = B.LOG_DT
                      AND A.TIME = HOUR(B.LOG_TM)) AS UA_COUNT
           FROM (SELECT HOUR(LOG_TM) AS TIME
