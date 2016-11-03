@@ -151,6 +151,11 @@ public class ServiceReport extends AbstractReport {
 			sheet = workbook.getSheetAt(sheetCnt);
 			sheetName = sheet.getSheetName();
 			workbook.setSheetName(sheetCnt++, name);
+			
+			// remove IP_ADDRESS_GROUP, USER_AGENT_GROUP
+			row = sheet.getRow(0);
+			row.removeCell(row.getCell(11));
+			row.removeCell(row.getCell(12));
 
     		rowIdx = 1;
             for (Service service : serviceList) {
@@ -218,16 +223,22 @@ public class ServiceReport extends AbstractReport {
     			}
     			
     			cell = row.getCell(colIdx++);
+    			/*
     			if (service.getIp_count() != null && service.getIp_count() != 0) {
     				cell.setCellValue(service.getIp_count());
     				cell.setCellStyle(styles.get("numeric"));
     			}
+    			*/
+    			row.removeCell(cell);
     			
     			cell = row.getCell(colIdx++);
+    			/*
     			if (service.getUa_count() != null && service.getUa_count() != 0) {
     				cell.setCellValue(service.getUa_count());
     				cell.setCellStyle(styles.get("numeric"));
     			}
+    			*/
+    			row.removeCell(cell);
             }
 
     		XSSFDrawing drawing = sheet.getDrawingPatriarch();
@@ -425,6 +436,11 @@ public class ServiceReport extends AbstractReport {
 			workbook.setSheetName(sheetCnt++, name);
 			
 			int diff = (31 - serviceList.size());
+			
+			// remove IP_ADDRESS_GROUP, USER_AGENT_GROUP
+			row = sheet.getRow(0);
+			row.removeCell(row.getCell(11));
+			row.removeCell(row.getCell(12));
 
     		rowIdx = 1;
             for (Service service : serviceList) {
@@ -504,16 +520,22 @@ public class ServiceReport extends AbstractReport {
 				cell.setCellStyle(styles.get("numeric"));
     			
     			cell = row.getCell(colIdx++);
+    			/*
     			if (service.getIp_count() != null) {
     				cell.setCellValue(service.getIp_count());
     			}
 				cell.setCellStyle(styles.get("numeric"));
+				*/
+    			row.removeCell(cell);
     			
     			cell = row.getCell(colIdx++);
+    			/*
     			if (service.getUa_count() != null) {
     				cell.setCellValue(service.getUa_count());
     			}
 				cell.setCellStyle(styles.get("numeric"));
+				*/
+    			row.removeCell(cell);
             }
 			
 			if (diff > 0) {

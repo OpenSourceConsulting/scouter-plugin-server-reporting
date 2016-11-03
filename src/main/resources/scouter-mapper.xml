@@ -521,16 +521,6 @@
                , A.REQUEST_COUNT
                , A.ERROR_COUNT
                , A.ELAPSED_EXCEED_COUNT
-               , (SELECT COUNT(DISTINCT(B.IP_ADDRESS)) 
-                    FROM IP_ADDRESS_5M_${date} B 
-                   WHERE B.OBJECT_HASH IN (SELECT OBJECT_HASH FROM AGENT_INFO_TBL WHERE OBJECT_NAME LIKE '%' || A.APP_ID || '%')
-                     AND A.SERVICE_HASH = B.SERVICE_HASH
-                     AND YEAR(B.LOG_DT) = #{year} AND MONTH(B.LOG_DT) = #{month}) AS IP_COUNT
-               , (SELECT COUNT(DISTINCT(B.USER_AGENT)) 
-                    FROM USER_AGENT_5M_${date} B 
-                   WHERE B.OBJECT_HASH IN (SELECT OBJECT_HASH FROM AGENT_INFO_TBL WHERE OBJECT_NAME LIKE '%' || A.APP_ID || '%')
-                     AND A.SERVICE_HASH = B.SERVICE_HASH
-                     AND YEAR(B.LOG_DT) = #{year} AND MONTH(B.LOG_DT) = #{month}) AS UA_COUNT
           FROM (SELECT MAX(A.DAY) AS DAY
                        , A.APP_ID
                        , A.SERVICE_HASH
@@ -1329,18 +1319,6 @@
                , A.REQUEST_COUNT
                , A.ERROR_COUNT
                , A.ELAPSED_EXCEED_COUNT
-               , (SELECT COUNT(DISTINCT(B.IP_ADDRESS)) 
-                    FROM IP_ADDRESS_5M_${date} B 
-                   WHERE B.OBJECT_HASH IN (SELECT OBJECT_HASH FROM AGENT_INFO_TBL WHERE OBJECT_NAME LIKE '%${app_id}-%')
-                     AND A.SERVICE_HASH = B.SERVICE_HASH 
-                     AND A.LOG_DT = B.LOG_DT
-                     AND A.TIME = HOUR(B.LOG_TM)) AS IP_COUNT
-               , (SELECT COUNT(DISTINCT(B.USER_AGENT)) 
-                    FROM USER_AGENT_5M_${date} B 
-                   WHERE B.OBJECT_HASH IN (SELECT OBJECT_HASH FROM AGENT_INFO_TBL WHERE OBJECT_NAME LIKE '%${app_id}-%')
-                     AND A.SERVICE_HASH = B.SERVICE_HASH 
-                     AND A.LOG_DT = B.LOG_DT
-                     AND A.TIME = HOUR(B.LOG_TM)) AS UA_COUNT
           FROM (SELECT HOUR(LOG_TM) AS TIME
                        , MAX(LOG_DT) AS LOG_DT
                        , MAX(SERVICE_HASH) AS SERVICE_HASH
