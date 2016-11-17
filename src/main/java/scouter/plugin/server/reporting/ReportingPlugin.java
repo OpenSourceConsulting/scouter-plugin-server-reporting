@@ -867,6 +867,8 @@ public class ReportingPlugin {
     	    	
     			System.out.println("[SCOUTER-X] Create the report files for [" + year + "/" + month + "/" + date + "] will be start.");
     		} 
+    	} else {
+			System.out.println("[SCOUTER-X] Create the report files for [" + year + "/" + month + "/" + date + "] will be start.");
     	}
     	
     	System.out.println("[SCOUTER-X] Report files will be located in [" + conf.getValue("ext_plugin_reporting_output_dir", AbstractReport.DEFAULT_DIR) + "] with sub-directories.");
