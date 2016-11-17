@@ -850,7 +850,7 @@ public class ReportingPlugin {
 		
     	boolean isMonthly = false;
     	
-    	args = new String[] {"201610"};
+    	//args = new String[] {"20161109"};
 
     	if (args.length == 1) {
     		if (args[0].length() == 6) {
@@ -858,12 +858,18 @@ public class ReportingPlugin {
     			
     			year = Integer.parseInt(args[0].substring(0, 4));
     			month = Integer.parseInt(args[0].substring(4));
+    	    	
+    			System.out.println("[SCOUTER-X] Create the report files for [" + year + "/" + month + "] will be start.");
     		} else if (args[0].length() == 8) {
     			year = Integer.parseInt(args[0].substring(0, 4));
     			month = Integer.parseInt(args[0].substring(4, 6));
     			date = Integer.parseInt(args[0].substring(6));
+    	    	
+    			System.out.println("[SCOUTER-X] Create the report files for [" + year + "/" + month + "/" + date + "] will be start.");
     		} 
     	}
+    	
+    	System.out.println("[SCOUTER-X] Report files will be located in [" + conf.getValue("ext_plugin_reporting_output_dir", AbstractReport.DEFAULT_DIR) + "] with sub-directories.");
 		
 		AbstractReport report = null;
 		
@@ -922,6 +928,16 @@ public class ReportingPlugin {
 			} else {
 				System.out.println("[SCOUTER-X] Start Monthly Service Report.");
 				report.createExcel(year, month);
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		
+		// Operation Reporting
+		try {
+			if (isMonthly) {
+				System.out.println("[SCOUTER-X] Start Monthly Operation Report.");
+				new OperationReport().createExcel(year, month);
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
