@@ -200,6 +200,41 @@
         )
     </update>
     
+    <delete id="deleteAlert" parameterMap="ymd">
+        DELETE FROM ALERT_${date}
+         WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) &lt;= #{month}
+    </delete>
+    
+    <delete id="deleteHostAgent" parameterMap="ymd">
+        DELETE FROM HOST_AGENT_5M_${date}
+         WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) &lt;= #{month}
+    </delete>
+    
+    <delete id="deleteIpAddress" parameterMap="ymd">
+        DELETE FROM IP_ADDRESS_5M_${date}
+         WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) &lt;= #{month}
+    </delete>
+    
+    <delete id="deleteUserAgent" parameterMap="ymd">
+        DELETE FROM USER_AGENT_5M_${date}
+         WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) &lt;= #{month}
+    </delete>
+    
+    <delete id="deleteSql" parameterMap="ymd">
+        DELETE FROM SQL_5M_${date}
+         WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) &lt;= #{month}
+    </delete>
+    
+    <delete id="deleteJavaAgent" parameterMap="ymd">
+        DELETE FROM JAVA_AGENT_5M_${date}
+         WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) &lt;= #{month}
+    </delete>
+    
+    <delete id="deleteService" parameterMap="ymd">
+        DELETE FROM SERVICE_5M_${date}
+         WHERE YEAR(LOG_DT) = #{year} AND MONTH(LOG_DT) &lt;= #{month}
+    </delete>
+    
     <insert id="insertAgentInfo" parameterType="scouter.plugin.server.reporting.vo.AgentInfo">
         INSERT INTO AGENT_INFO_TBL 
                (OBJECT_HASH, 

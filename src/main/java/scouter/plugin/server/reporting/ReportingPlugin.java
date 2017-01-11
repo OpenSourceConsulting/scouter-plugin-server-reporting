@@ -9,6 +9,7 @@ import java.sql.Time;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -423,6 +424,9 @@ public class ReportingPlugin {
 					try {
 						Logger.println("[SCOUTER-X] Start Daily Alert Report.");
 						report.createExcel(cal.get(Calendar.YEAR), cal.get(Calendar.MONTH) + 1, cal.get(Calendar.DAY_OF_MONTH));
+						
+						// Delete old statistics data
+						session.delete("Scouter.deleteAlert", getDateParm(cal));
 					} catch (Exception e) {
 						Logger.printStackTrace(e);
 					}
@@ -455,6 +459,9 @@ public class ReportingPlugin {
 					try {
 				    	Logger.println("[SCOUTER-X] Start Daily Host Report.");
 						report.createExcel(cal.get(Calendar.YEAR), cal.get(Calendar.MONTH) + 1, cal.get(Calendar.DAY_OF_MONTH));
+						
+						// Delete old statistics data
+						session.delete("Scouter.deleteHostAgent", getDateParm(cal));
 					} catch (Exception e) {
 						Logger.printStackTrace(e);
 					}
@@ -487,6 +494,9 @@ public class ReportingPlugin {
 					try {
 				    	Logger.println("[SCOUTER-X] Start Daily Java Report.");
 						report.createExcel(cal.get(Calendar.YEAR), cal.get(Calendar.MONTH) + 1, cal.get(Calendar.DAY_OF_MONTH));
+						
+						// Delete old statistics data
+						session.delete("Scouter.deleteJavaAgent", getDateParm(cal));
 					} catch (Exception e) {
 						Logger.printStackTrace(e);
 					}
@@ -519,6 +529,13 @@ public class ReportingPlugin {
 					try {
 				    	Logger.println("[SCOUTER-X] Start Daily Service Report.");
 						report.createExcel(cal.get(Calendar.YEAR), cal.get(Calendar.MONTH) + 1, cal.get(Calendar.DAY_OF_MONTH));
+						
+						// Delete old statistics data
+						Map<String, Object> param = getDateParm(cal);
+						session.delete("Scouter.deleteSql", param);
+						session.delete("Scouter.deleteIpAddress", param);
+						session.delete("Scouter.deleteUserAgent", param);
+						session.delete("Scouter.deleteService", param);
 					} catch (Exception e) {
 						Logger.printStackTrace(e);
 					}					
@@ -838,6 +855,27 @@ public class ReportingPlugin {
     
     private synchronized static void updateAgentInfo(AgentInfo agentInfo) {
 		 session.update("Scouter.updateAgentInfo", agentInfo);
+    }
+    
+    private synchronized static Map<String, Object> getDateParm(Calendar cal) {
+		Map<String, Object> param = new HashMap<String, Object>();
+
+		cal.add(Calendar.DATE, -60);
+		param.put("year", Integer.toString(cal.get(Calendar.YEAR)));
+		
+        if ((cal.get(Calendar.MONTH) + 1) < 10) {
+    		param.put("month", "0" + (cal.get(Calendar.MONTH) + 1));
+        } else {
+    		param.put("month", (cal.get(Calendar.MONTH) + 1) + "");
+        }
+
+        if (cal.get(Calendar.DATE) < 10) {
+    		param.put("date", "0" + cal.get(Calendar.DATE));
+        } else {
+    		param.put("date", cal.get(Calendar.DATE) + "");
+        }
+        
+        return param;
     }
     
     public static void main(String[] args) throws Exception {
