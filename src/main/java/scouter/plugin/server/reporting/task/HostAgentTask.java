@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.ibatis.session.SqlSession;
+import org.apache.ibatis.session.SqlSessionFactory;
 
 import scouter.plugin.server.reporting.ReportingPlugin;
 import scouter.plugin.server.reporting.collector.HostAgentStat;
@@ -12,17 +13,19 @@ import scouter.plugin.server.reporting.vo.HostAgent;
 import scouter.server.Logger;
 
 public class HostAgentTask implements Runnable {
-	
-	private SqlSession session;
+
+	private SqlSessionFactory sqlSessionFactory;
 	private Map<Integer, HostAgentStat> hostAgentStatMap;
 	
-	public HostAgentTask(SqlSession session, Map<Integer, HostAgentStat> hostAgentStatMap) {
-		this.session = session;
+	public HostAgentTask(SqlSessionFactory sqlSessionFactory, Map<Integer, HostAgentStat> hostAgentStatMap) {
+		this.sqlSessionFactory = sqlSessionFactory;
 		this.hostAgentStatMap = hostAgentStatMap;
 	}
 
 	@Override
 	public void run() {
+		SqlSession session = sqlSessionFactory.openSession(true);
+		
 		try {
 			List<Integer> keyList = new ArrayList<Integer>(hostAgentStatMap.keySet());
 			
@@ -50,18 +53,22 @@ public class HostAgentTask implements Runnable {
 						
 						try { 
 							session.insert("Scouter.insertHostAgent", hostAgent);
+							
+							if (ReportingPlugin.conf.getBoolean("ext_plugin_reporting_logging_enabled", false)) {
+								Logger.println("[" + key + "] hostAgent inserted.");
+					        }
 						} catch (Exception e) {
 							Logger.printStackTrace(e);
 						}
-	
-						if (ReportingPlugin.conf.getBoolean("ext_plugin_reporting_logging_enabled", false)) {
-							Logger.println("[" + key + "] hostAgent inserted.");
-				        }
 					}
 				}
 			}
 		} catch (Exception e) {
 			Logger.printStackTrace(e);
+		} finally {
+			if (session != null) {
+				session.close();
+			}
 		}
 	}
 }

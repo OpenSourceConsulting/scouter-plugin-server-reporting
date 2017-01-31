@@ -7,21 +7,12 @@ import org.apache.ibatis.session.SqlSessionFactoryBuilder;
 public abstract class AbstractService {
 
 	private static SqlSessionFactory sqlSessionFactory;
-	private static SqlSession session;
 	
-	private synchronized void initSession() {
+	protected SqlSession getSession() {
 		if (sqlSessionFactory == null) {
 			sqlSessionFactory = new SqlSessionFactoryBuilder().build(AbstractService.class.getResourceAsStream("/mybatis-config.xml"));
 		}
 		
-		session = sqlSessionFactory.openSession(true);
-	}
-	
-	protected SqlSession getSession() {
-		if (session == null) {
-			initSession();
-		}
-		
-		return session;
+		return sqlSessionFactory.openSession(true);
 	}
 }

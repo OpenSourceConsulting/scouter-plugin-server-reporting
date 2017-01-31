@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.ibatis.session.SqlSession;
+import org.apache.ibatis.session.SqlSessionFactory;
 
 import scouter.plugin.server.reporting.ReportingPlugin;
 import scouter.plugin.server.reporting.collector.ServiceStat;
@@ -15,16 +16,18 @@ import scouter.util.DateUtil;
 
 public class ServiceTask implements Runnable {
 	
-	private SqlSession session;
+	private SqlSessionFactory sqlSessionFactory;
 	private Map<Integer, Map<Integer, ServiceStat>> serviceStatMap;
 	
-	public ServiceTask(SqlSession session, Map<Integer, Map<Integer, ServiceStat>> serviceStatMap) {
-		this.session = session;
+	public ServiceTask(SqlSessionFactory sqlSessionFactory, Map<Integer, Map<Integer, ServiceStat>> serviceStatMap) {
+		this.sqlSessionFactory = sqlSessionFactory;
 		this.serviceStatMap = serviceStatMap;
 	}
 
 	@Override
 	public void run() {
+		SqlSession session = sqlSessionFactory.openSession(true);
+		
 		try {
 			long time = (System.currentTimeMillis() - 10000) / DateUtil.MILLIS_PER_FIVE_MINUTE * DateUtil.MILLIS_PER_FIVE_MINUTE;
 			
@@ -82,6 +85,10 @@ public class ServiceTask implements Runnable {
 			}
 		} catch (Exception e) {
 			Logger.printStackTrace(e);
+		} finally {
+			if (session != null) {
+				session.close();
+			}
 		}
 	}
 }

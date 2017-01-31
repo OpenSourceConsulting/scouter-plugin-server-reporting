@@ -7,6 +7,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.ibatis.session.SqlSession;
+
 import scouter.plugin.server.reporting.vo.AgentInfo;
 import scouter.plugin.server.reporting.vo.Alert;
 import scouter.plugin.server.reporting.vo.HostAgent;
@@ -14,13 +16,30 @@ import scouter.plugin.server.reporting.vo.JavaAgent;
 import scouter.plugin.server.reporting.vo.Service;
 
 public class ScouterService extends AbstractService {
+	private SqlSession session;
 
 	public List<AgentInfo> getAgentInfoList() {
-		return getSession().selectList("Scouter.selectAgentInfoList");
+		session = getSession();
+		
+		try {
+			return getSession().selectList("Scouter.selectAgentInfoList");
+		} finally {
+			if (session != null) {
+				session.close();
+			}
+		}
 	}
 	
 	public AgentInfo getAgentInfo(int objHash) {
-		return getSession().selectOne("Scouter.selectAgentInfo", objHash);
+		session = getSession();
+		
+		try {
+			return getSession().selectOne("Scouter.selectAgentInfo", objHash);
+		} finally {
+			if (session != null) {
+				session.close();
+			}
+		}
 	}
 	
 	public List<HostAgent> getHostDailyStat(int year, int month, int objHash) {
@@ -41,22 +60,29 @@ public class ScouterService extends AbstractService {
         	m = month + "";
         }
 
-		Map<String, Object> param = null;
-        for (int i = 1; i <= maxDay; i++) {
-			param = new HashMap<String, Object>();
-			param.put("object_hash", objHash);
-			param.put("year", Integer.toString(year));
-			param.put("month", m);
-
-	        if (i < 10) {
-	        	d = "0" + i;
-	        } else {
-	        	d = i + "";
-	        }
-	        
-			param.put("date", d);
-			
-			hostAgentList.add((HostAgent) getSession().selectOne("Scouter.selectHostDailyStat", param));
+		session = getSession();
+		try {
+			Map<String, Object> param = null;
+	        for (int i = 1; i <= maxDay; i++) {
+				param = new HashMap<String, Object>();
+				param.put("object_hash", objHash);
+				param.put("year", Integer.toString(year));
+				param.put("month", m);
+	
+		        if (i < 10) {
+		        	d = "0" + i;
+		        } else {
+		        	d = i + "";
+		        }
+		        
+				param.put("date", d);
+				
+				hostAgentList.add((HostAgent) session.selectOne("Scouter.selectHostDailyStat", param));
+			}
+		} finally {
+			if (session != null) {
+				session.close();
+			}
 		}
         
         return hostAgentList;
@@ -80,22 +106,29 @@ public class ScouterService extends AbstractService {
         	m = month + "";
         }
 
-		Map<String, Object> param = null;
-        for (int i = 1; i <= maxDay; i++) {
-			param = new HashMap<String, Object>();
-			param.put("object_hash", objHash);
-			param.put("year", Integer.toString(year));
-			param.put("month", m);
-
-	        if (i < 10) {
-	        	d = "0" + i;
-	        } else {
-	        	d = i + "";
-	        }
-	        
-			param.put("date", d);
-			
-			javaAgentList.add((JavaAgent) getSession().selectOne("Scouter.selectJavaDailyStat", param));
+		session = getSession();
+		try {
+			Map<String, Object> param = null;
+	        for (int i = 1; i <= maxDay; i++) {
+				param = new HashMap<String, Object>();
+				param.put("object_hash", objHash);
+				param.put("year", Integer.toString(year));
+				param.put("month", m);
+	
+		        if (i < 10) {
+		        	d = "0" + i;
+		        } else {
+		        	d = i + "";
+		        }
+		        
+				param.put("date", d);
+				
+				javaAgentList.add((JavaAgent) session.selectOne("Scouter.selectJavaDailyStat", param));
+			}
+		} finally {
+			if (session != null) {
+				session.close();
+			}
 		}
         
         return javaAgentList;
@@ -120,21 +153,28 @@ public class ScouterService extends AbstractService {
         	m = month + "";
         }
 
-		Map<String, Object> param = null;
-        for (int i = 1; i <= maxDay; i++) {
-			param = new HashMap<String, Object>();
-			param.put("year", Integer.toString(year));
-			param.put("month", m);
-
-	        if (i < 10) {
-	        	d = "0" + i;
-	        } else {
-	        	d = i + "";
-	        }
-	        
-			param.put("date", d);
-			
-			serviceMap.put(Integer.toString(year) + "." + m + "." + d, (List) getSession().selectList("Scouter.selectServiceDailyStat", param));
+		session = getSession();
+		try {
+			Map<String, Object> param = null;
+	        for (int i = 1; i <= maxDay; i++) {
+				param = new HashMap<String, Object>();
+				param.put("year", Integer.toString(year));
+				param.put("month", m);
+	
+		        if (i < 10) {
+		        	d = "0" + i;
+		        } else {
+		        	d = i + "";
+		        }
+		        
+				param.put("date", d);
+				
+				serviceMap.put(Integer.toString(year) + "." + m + "." + d, (List) session.selectList("Scouter.selectServiceDailyStat", param));
+			}
+		} finally {
+			if (session != null) {
+				session.close();
+			}
 		}
         
         return serviceMap;
@@ -149,8 +189,15 @@ public class ScouterService extends AbstractService {
         } else {
     		param.put("month", month + "");
         }
-        
-        return getSession().selectList("Scouter.selectServiceMonthSummary", param);
+
+		session = getSession();
+		try {
+			return session.selectList("Scouter.selectServiceMonthSummary", param);
+		} finally {
+			if (session != null) {
+				session.close();
+			}
+		}
 	}
 
 	public List<Service> getServiceDaySummary(int year, int month, int date) {
@@ -168,8 +215,15 @@ public class ScouterService extends AbstractService {
         } else {
     		param.put("date", date + "");
         }
-        
-        return getSession().selectList("Scouter.selectServiceDaySummary", param);
+
+		session = getSession();
+		try {
+			return session.selectList("Scouter.selectServiceDaySummary", param);
+		} finally {
+			if (session != null) {
+				session.close();
+			}
+		}
 	}
 	
 	public List<HostAgent> getHostHourlyStat(int year, int month, int date, int objHash) {
@@ -178,8 +232,15 @@ public class ScouterService extends AbstractService {
 		param.put("year", Integer.toString(year));
 		param.put("month", month);
 		param.put("date", date < 10 ? "0" + date : date);
-		
-		return getSession().selectList("Scouter.selectHostHourlyStat", param);
+
+		session = getSession();
+		try {
+			return session.selectList("Scouter.selectHostHourlyStat", param);
+		} finally {
+			if (session != null) {
+				session.close();
+			}
+		}
 	}
 	
 	public List<JavaAgent> getJavaHourlyStat(int year, int month, int date, int objHash) {
@@ -188,8 +249,15 @@ public class ScouterService extends AbstractService {
 		param.put("year", Integer.toString(year));
 		param.put("month", month);
 		param.put("date", date < 10 ? "0" + date : date);
-		
-		return getSession().selectList("Scouter.selectJavaHourlyStat", param);
+
+		session = getSession();
+		try {
+			return session.selectList("Scouter.selectJavaHourlyStat", param);
+		} finally {
+			if (session != null) {
+				session.close();
+			}
+		}
 	}
 
 	public List<Service> getServiceHourlyStat(int year, int month, int date, String appId, long hash) {
@@ -210,8 +278,15 @@ public class ScouterService extends AbstractService {
         
         param.put("app_id", appId);
         param.put("service_hash", hash);
-        
-        return getSession().selectList("Scouter.selectServiceHourlyStat", param);
+
+		session = getSession();
+		try {
+			return session.selectList("Scouter.selectServiceHourlyStat", param);
+		} finally {
+			if (session != null) {
+				session.close();
+			}
+		}
 	}
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
@@ -233,21 +308,28 @@ public class ScouterService extends AbstractService {
         	m = month + "";
         }
 
-		Map<String, Object> param = null;
-        for (int i = 1; i <= maxDay; i++) {
-			param = new HashMap<String, Object>();
-			param.put("year", Integer.toString(year));
-			param.put("month", m);
-
-	        if (i < 10) {
-	        	d = "0" + i;
-	        } else {
-	        	d = i + "";
-	        }
-	        
-			param.put("date", d);
-			
-			alertList.addAll((List) getSession().selectList("Scouter.selectAlert", param));
+		session = getSession();
+		try {
+			Map<String, Object> param = null;
+	        for (int i = 1; i <= maxDay; i++) {
+				param = new HashMap<String, Object>();
+				param.put("year", Integer.toString(year));
+				param.put("month", m);
+	
+		        if (i < 10) {
+		        	d = "0" + i;
+		        } else {
+		        	d = i + "";
+		        }
+		        
+				param.put("date", d);
+				
+				alertList.addAll((List) session.selectList("Scouter.selectAlert", param));
+			}
+		} finally {
+			if (session != null) {
+				session.close();
+			}
 		}
         
         return alertList;
@@ -268,8 +350,15 @@ public class ScouterService extends AbstractService {
         } else {
     		param.put("date", date + "");
         }
-        
-        return getSession().selectList("Scouter.selectAlert", param);
+
+		session = getSession();
+		try {
+			return session.selectList("Scouter.selectAlert", param);
+		} finally {
+			if (session != null) {
+				session.close();
+			}
+		}
 	}
 
 	public List<Service> getApplicationOperationStat(int year, int month) {
@@ -281,8 +370,15 @@ public class ScouterService extends AbstractService {
         } else {
     		param.put("month", month + "");
         }
-        
-        return getSession().selectList("Scouter.selectApplicationOperationStat", param);
+
+		session = getSession();
+		try {
+			return session.selectList("Scouter.selectApplicationOperationStat", param);
+		} finally {
+			if (session != null) {
+				session.close();
+			}
+		}
 	}
 
 	public Service getApplicationOperationStatPrev(int year, int month, String appId, Integer hash) {
@@ -297,8 +393,15 @@ public class ScouterService extends AbstractService {
         
         param.put("app_id", appId);
         param.put("service_hash", hash);
-        
-        return getSession().selectOne("Scouter.selectApplicationOperationStatPrev", param);
+
+		session = getSession();
+		try {
+			return session.selectOne("Scouter.selectApplicationOperationStatPrev", param);
+		} finally {
+			if (session != null) {
+				session.close();
+			}
+		}
 	}
 
 	public List<Service> getWorstApplications(int year, int month) {
@@ -310,8 +413,15 @@ public class ScouterService extends AbstractService {
         } else {
     		param.put("month", month + "");
         }
-        
-        return getSession().selectList("Scouter.selectWorstApplications", param);
+
+		session = getSession();
+		try {
+			return session.selectList("Scouter.selectWorstApplications", param);
+		} finally {
+			if (session != null) {
+				session.close();
+			}
+		}
 	}
 	
 	public static void main(String[] args) {

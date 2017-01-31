@@ -68,7 +68,8 @@ public class ReportingPlugin {
     
     private static AtomicInteger ai = new AtomicInteger(0);
     private static volatile NetworkServerControl server;
-	private static SqlSession session;
+    private static SqlSessionFactory sqlSessionFactory;
+	//private static SqlSession session;
 	
 	// main key is objHash, sub key is serviceHash (used in PluginConstants.PLUGIN_SERVER_XLOG)
 	private static Map<Integer, Map<Integer, ServiceStat>> serviceStatMap = new ConcurrentHashMap<Integer, Map<Integer, ServiceStat>>();
@@ -85,6 +86,8 @@ public class ReportingPlugin {
         }
     	
     	if (ai.incrementAndGet() == 1) {
+    		SqlSession session = null;
+    		
 	    	try {
 	    		// ======================================================================
 	    		// TODO 두 개 이상의 Collector Server에 대한 고려. (데이터 수집은 한군데에서 할 경우)
@@ -97,7 +100,7 @@ public class ReportingPlugin {
 				Logger.println("[SCOUTER-X] 1. Derby server launched.");
 				
 				// Create a SqlSession
-				SqlSessionFactory sqlSessionFactory = new SqlSessionFactoryBuilder().build(ReportingPlugin.class.getResourceAsStream("/mybatis-config.xml"));
+				sqlSessionFactory = new SqlSessionFactoryBuilder().build(ReportingPlugin.class.getResourceAsStream("/mybatis-config.xml"));
 			    session = sqlSessionFactory.openSession(true);
 				
 				Logger.println("[SCOUTER-X] 2. SqlSession was opened.");
@@ -379,6 +382,10 @@ public class ReportingPlugin {
 				Logger.println("[SCOUTER-X] 13. Check & Create ALERT.");
 			} catch (Exception e) {
 				Logger.printStackTrace(e);
+			} finally {
+				if (session != null) {
+					session.close();
+				}
 			}
 	    	
 	    	ScheduledExecutorService serviceTaskExecutor = Executors.newScheduledThreadPool(3);
@@ -386,9 +393,9 @@ public class ReportingPlugin {
 	    	long initDelay = ((System.currentTimeMillis() / DateUtil.MILLIS_PER_FIVE_MINUTE) + 1) * DateUtil.MILLIS_PER_FIVE_MINUTE - System.currentTimeMillis();
 	    	
 	    	// intiDelay 후 5분마다 각 Task 실행
-	    	serviceTaskExecutor.scheduleAtFixedRate(new HostAgentTask(session, hostAgentStatMap), initDelay + 50, DateUtil.MILLIS_PER_FIVE_MINUTE, TimeUnit.MILLISECONDS);
-	    	serviceTaskExecutor.scheduleAtFixedRate(new JavaAgentTask(session, javaAgentStatMap), initDelay + 50, DateUtil.MILLIS_PER_FIVE_MINUTE, TimeUnit.MILLISECONDS);
-	    	serviceTaskExecutor.scheduleAtFixedRate(new ServiceTask(session, serviceStatMap), initDelay + 10, DateUtil.MILLIS_PER_FIVE_MINUTE, TimeUnit.MILLISECONDS);
+	    	serviceTaskExecutor.scheduleAtFixedRate(new HostAgentTask(sqlSessionFactory, hostAgentStatMap), initDelay + 50, DateUtil.MILLIS_PER_FIVE_MINUTE, TimeUnit.MILLISECONDS);
+	    	serviceTaskExecutor.scheduleAtFixedRate(new JavaAgentTask(sqlSessionFactory, javaAgentStatMap), initDelay + 50, DateUtil.MILLIS_PER_FIVE_MINUTE, TimeUnit.MILLISECONDS);
+	    	serviceTaskExecutor.scheduleAtFixedRate(new ServiceTask(sqlSessionFactory, serviceStatMap), initDelay + 10, DateUtil.MILLIS_PER_FIVE_MINUTE, TimeUnit.MILLISECONDS);
 	    	
 	    	// SQL 정보는 5분 단위 SummaryPack으로부터 데이터가 수신될때 DB에 직접 Insert한다.
 	    	// Alert 정보는 AlertPack으로부터 데이터가 수신될때 DB에 직접 Insert한다.
@@ -421,6 +428,7 @@ public class ReportingPlugin {
 					AbstractReport report = new AlertReport();
 					
 					// Alert Reporting (Dayily)
+					SqlSession session = sqlSessionFactory.openSession(true);
 					try {
 						Logger.println("[SCOUTER-X] Start Daily Alert Report.");
 						report.createExcel(cal.get(Calendar.YEAR), cal.get(Calendar.MONTH) + 1, cal.get(Calendar.DAY_OF_MONTH));
@@ -429,6 +437,10 @@ public class ReportingPlugin {
 						session.delete("Scouter.deleteAlert", getDateParm(cal));
 					} catch (Exception e) {
 						Logger.printStackTrace(e);
+					} finally {
+						if (session != null) {
+							session.close();
+						}
 					}
 					
 					// Alert Reporting (Monthly)
@@ -456,6 +468,7 @@ public class ReportingPlugin {
 					AbstractReport report = new HostReport();
 					
 					// Host Reporting (Dayily)
+					SqlSession session = sqlSessionFactory.openSession(true);
 					try {
 				    	Logger.println("[SCOUTER-X] Start Daily Host Report.");
 						report.createExcel(cal.get(Calendar.YEAR), cal.get(Calendar.MONTH) + 1, cal.get(Calendar.DAY_OF_MONTH));
@@ -464,6 +477,10 @@ public class ReportingPlugin {
 						session.delete("Scouter.deleteHostAgent", getDateParm(cal));
 					} catch (Exception e) {
 						Logger.printStackTrace(e);
+					} finally {
+						if (session != null) {
+							session.close();
+						}
 					}
 					
 					// Host Reporting (Monthly)
@@ -491,6 +508,7 @@ public class ReportingPlugin {
 					AbstractReport report = new JavaReport();
 					
 					// Java Reporting (Dayily)
+					SqlSession session = sqlSessionFactory.openSession(true);
 					try {
 				    	Logger.println("[SCOUTER-X] Start Daily Java Report.");
 						report.createExcel(cal.get(Calendar.YEAR), cal.get(Calendar.MONTH) + 1, cal.get(Calendar.DAY_OF_MONTH));
@@ -499,6 +517,10 @@ public class ReportingPlugin {
 						session.delete("Scouter.deleteJavaAgent", getDateParm(cal));
 					} catch (Exception e) {
 						Logger.printStackTrace(e);
+					} finally {
+						if (session != null) {
+							session.close();
+						}
 					}
 					
 					// Java Reporting (Monthly)
@@ -526,6 +548,7 @@ public class ReportingPlugin {
 					AbstractReport report = new ServiceReport();
 					
 					// Service Reporting (Dayily)
+					SqlSession session = sqlSessionFactory.openSession(true);
 					try {
 				    	Logger.println("[SCOUTER-X] Start Daily Service Report.");
 						report.createExcel(cal.get(Calendar.YEAR), cal.get(Calendar.MONTH) + 1, cal.get(Calendar.DAY_OF_MONTH));
@@ -538,6 +561,10 @@ public class ReportingPlugin {
 						session.delete("Scouter.deleteService", param);
 					} catch (Exception e) {
 						Logger.printStackTrace(e);
+					} finally {
+						if (session != null) {
+							session.close();
+						}
 					}					
 					
 					// Service Reporting (Monthly)
@@ -578,7 +605,7 @@ public class ReportingPlugin {
 	    	initialDelay + 5000, DateUtil.MILLIS_PER_DAY, TimeUnit.MILLISECONDS);
     	} else {
     		while (true) {
-    			if (server != null && session != null) {
+    			if (server != null && sqlSessionFactory != null) {
     				break;
     			}
     			
@@ -597,6 +624,8 @@ public class ReportingPlugin {
      */
     @ServerPlugin(PluginConstants.PLUGIN_SERVER_ALERT)
     public void alert(AlertPack pack) {
+		SqlSession session = sqlSessionFactory.openSession(true);
+		
     	try {
 			Alert alert = new Alert();
 
@@ -611,6 +640,10 @@ public class ReportingPlugin {
 			session.insert("Scouter.insertAlert", alert);
 		} catch (Exception e) {
 			Logger.printStackTrace(e);
+		} finally {
+			if (session != null) {
+				session.close();
+			}
 		}
     	
     	if (pack.title.equals("INACTIVE_OBJECT")) {
@@ -777,7 +810,8 @@ public class ReportingPlugin {
     			count = countList.get(idx);
     			error = errorList.get(idx);
     			elapsed = elapsedList.get(idx++);
-    			
+
+				SqlSession session = sqlSessionFactory.openSession(true);
     			try {
     				sqlHash = ((Number) id.toJavaObject()).intValue();
     				sqlStr = TextRD.getString(DateUtil.yyyymmdd(pack.time), TextTypes.SQL, sqlHash);
@@ -811,6 +845,10 @@ public class ReportingPlugin {
 					session.insert("Scouter.insertSql", sql);
 				} catch (Exception e) {
 					Logger.printStackTrace(e);
+				} finally {
+					if (session != null) {
+						session.close();
+					}
 				}
     		}
     	}
@@ -846,15 +884,39 @@ public class ReportingPlugin {
     }
     
     private static AgentInfo selectAgentInfo(int objHash) {
-		 return session.selectOne("Scouter.selectAgentInfo", objHash);
+		SqlSession session = sqlSessionFactory.openSession(true);
+		
+		try {
+			return session.selectOne("Scouter.selectAgentInfo", objHash);
+		} finally {
+			if (session != null) {
+				session.close();
+			}
+		}
     }
     
     private synchronized static void insertAgentInfo(AgentInfo agentInfo) {
-		 session.insert("Scouter.insertAgentInfo", agentInfo);
+		SqlSession session = sqlSessionFactory.openSession(true);
+		
+		try {
+			session.insert("Scouter.insertAgentInfo", agentInfo);
+		} finally {
+			if (session != null) {
+				session.close();
+			}
+		}
     }
     
     private synchronized static void updateAgentInfo(AgentInfo agentInfo) {
-		 session.update("Scouter.updateAgentInfo", agentInfo);
+		SqlSession session = sqlSessionFactory.openSession(true);
+		
+		try {
+			session.update("Scouter.updateAgentInfo", agentInfo);
+		} finally {
+			if (session != null) {
+				session.close();
+			}
+		}
     }
     
     private synchronized static Map<String, Object> getDateParm(Calendar cal) {
@@ -888,7 +950,7 @@ public class ReportingPlugin {
 		
     	boolean isMonthly = false;
     	
-    	//args = new String[] {"20161109"};
+    	//args = new String[] {"201701"};
 
     	if (args.length == 1) {
     		if (args[0].length() == 6) {
