@@ -69,7 +69,6 @@ public class ReportingPlugin {
     private static AtomicInteger ai = new AtomicInteger(0);
     private static volatile NetworkServerControl server;
     private static SqlSessionFactory sqlSessionFactory;
-	//private static SqlSession session;
 	
 	// main key is objHash, sub key is serviceHash (used in PluginConstants.PLUGIN_SERVER_XLOG)
 	private static Map<Integer, Map<Integer, ServiceStat>> serviceStatMap = new ConcurrentHashMap<Integer, Map<Integer, ServiceStat>>();
@@ -100,7 +99,7 @@ public class ReportingPlugin {
 				Logger.println("[SCOUTER-X] 1. Derby server launched.");
 				
 				// Create a SqlSession
-				sqlSessionFactory = new SqlSessionFactoryBuilder().build(ReportingPlugin.class.getResourceAsStream("/mybatis-config.xml"));
+				sqlSessionFactory = getSqlSessionFactory();
 			    session = sqlSessionFactory.openSession(true);
 				
 				Logger.println("[SCOUTER-X] 2. SqlSession was opened.");
@@ -938,6 +937,15 @@ public class ReportingPlugin {
         }
         
         return param;
+    }
+    
+    public synchronized static SqlSessionFactory getSqlSessionFactory() {
+    	if (sqlSessionFactory == null) {
+    		SqlSessionFactory factory = new SqlSessionFactoryBuilder().build(ReportingPlugin.class.getResourceAsStream("/mybatis-config.xml"));
+    		return factory;
+    	}
+    	
+    	return sqlSessionFactory;
     }
     
     public static void main(String[] args) throws Exception {
