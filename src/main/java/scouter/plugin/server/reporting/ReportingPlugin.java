@@ -399,209 +399,211 @@ public class ReportingPlugin {
 	    	// SQL 정보는 5분 단위 SummaryPack으로부터 데이터가 수신될때 DB에 직접 Insert한다.
 	    	// Alert 정보는 AlertPack으로부터 데이터가 수신될때 DB에 직접 Insert한다.
 	    	
-	    	// reportingTask는 poi를 사용한 Excel 파일 생성 시 메모리 부하를 고려하여 한 시점에 하나의 스레드만 동작
-	    	ScheduledExecutorService reportingTaskExecutor = Executors.newScheduledThreadPool(1);
-	    	
-	    	// today    
-	    	Calendar date = new GregorianCalendar();
-	    	
-	    	// reset hour, minutes, seconds and millis
-	    	date.set(Calendar.HOUR_OF_DAY, 0);
-	    	date.set(Calendar.MINUTE, 0);
-	    	date.set(Calendar.SECOND, 0);
-	    	date.set(Calendar.MILLISECOND, 0);
-
-	    	// next day
-	    	date.add(Calendar.DAY_OF_MONTH, 1);
-	    	
-	    	final boolean forceMonthlyReport = false;
-	    	long initialDelay = date.getTimeInMillis() - System.currentTimeMillis();
-	    	
-	    	// Alert Reporting
-	    	reportingTaskExecutor.scheduleAtFixedRate(new Runnable() {
-				@Override
-				public void run() {
-					Calendar cal = Calendar.getInstance();
-					cal.add(Calendar.DAY_OF_MONTH, -1);
-					
-					AbstractReport report = new AlertReport();
-					
-					// Alert Reporting (Dayily)
-					SqlSession session = sqlSessionFactory.openSession(true);
-					try {
-						Logger.println("[SCOUTER-X] Start Daily Alert Report.");
-						report.createExcel(cal.get(Calendar.YEAR), cal.get(Calendar.MONTH) + 1, cal.get(Calendar.DAY_OF_MONTH));
+	    	if (conf.getBoolean("ext_plugin_reporting_excel_export", false)) {
+		    	// reportingTask는 poi를 사용한 Excel 파일 생성 시 메모리 부하를 고려하여 한 시점에 하나의 스레드만 동작
+		    	ScheduledExecutorService reportingTaskExecutor = Executors.newScheduledThreadPool(1);
+		    	
+		    	// today
+		    	Calendar date = new GregorianCalendar();
+		    	
+		    	// reset hour, minutes, seconds and millis
+		    	date.set(Calendar.HOUR_OF_DAY, 0);
+		    	date.set(Calendar.MINUTE, 0);
+		    	date.set(Calendar.SECOND, 0);
+		    	date.set(Calendar.MILLISECOND, 0);
+	
+		    	// next day
+		    	date.add(Calendar.DAY_OF_MONTH, 1);
+		    	
+		    	final boolean forceMonthlyReport = false;
+		    	long initialDelay = date.getTimeInMillis() - System.currentTimeMillis();
+		    	
+		    	// Alert Reporting
+		    	reportingTaskExecutor.scheduleAtFixedRate(new Runnable() {
+					@Override
+					public void run() {
+						Calendar cal = Calendar.getInstance();
+						cal.add(Calendar.DAY_OF_MONTH, -1);
 						
-						// Delete old statistics data
-						session.delete("Scouter.deleteAlert", getDateParm(cal));
-					} catch (Exception e) {
-						Logger.printStackTrace(e);
-					} finally {
-						if (session != null) {
-							session.close();
+						AbstractReport report = new AlertReport();
+						
+						// Alert Reporting (Dayily)
+						SqlSession session = sqlSessionFactory.openSession(true);
+						try {
+							Logger.println("[SCOUTER-X] Start Daily Alert Report.");
+							report.createExcel(cal.get(Calendar.YEAR), cal.get(Calendar.MONTH) + 1, cal.get(Calendar.DAY_OF_MONTH));
+							
+							// Delete old statistics data
+							session.delete("Scouter.deleteAlert", getDateParm(cal));
+						} catch (Exception e) {
+							Logger.printStackTrace(e);
+						} finally {
+							if (session != null) {
+								session.close();
+							}
+						}
+						
+						// Alert Reporting (Monthly)
+						cal = Calendar.getInstance();
+						if (cal.get(Calendar.DAY_OF_MONTH) == 1 || forceMonthlyReport) {
+							try {
+								cal.add(Calendar.MONTH, -1);
+						    	Logger.println("[SCOUTER-X] Start Monthly Alert Report.");
+								report.createExcel(cal.get(Calendar.YEAR), cal.get(Calendar.MONTH) + 1);
+							} catch (Exception e) {
+								Logger.printStackTrace(e);
+							}
 						}
 					}
-					
-					// Alert Reporting (Monthly)
-					cal = Calendar.getInstance();
-					if (cal.get(Calendar.DAY_OF_MONTH) == 1 || forceMonthlyReport) {
-						try {
-							cal.add(Calendar.MONTH, -1);
-					    	Logger.println("[SCOUTER-X] Start Monthly Alert Report.");
-							report.createExcel(cal.get(Calendar.YEAR), cal.get(Calendar.MONTH) + 1);
-						} catch (Exception e) {
-							Logger.printStackTrace(e);
-						}
-					}
-				}
-	    	}, 
-	    	initialDelay + 5000, DateUtil.MILLIS_PER_DAY, TimeUnit.MILLISECONDS);
-	    	
-	    	// Host Reporting
-	    	reportingTaskExecutor.scheduleAtFixedRate(new Runnable() {
-				@Override
-				public void run() {
-					Calendar cal = Calendar.getInstance();
-					cal.add(Calendar.DAY_OF_MONTH, -1);
-					
-					AbstractReport report = new HostReport();
-					
-					// Host Reporting (Dayily)
-					SqlSession session = sqlSessionFactory.openSession(true);
-					try {
-				    	Logger.println("[SCOUTER-X] Start Daily Host Report.");
-						report.createExcel(cal.get(Calendar.YEAR), cal.get(Calendar.MONTH) + 1, cal.get(Calendar.DAY_OF_MONTH));
+		    	}, 
+		    	initialDelay + 5000, DateUtil.MILLIS_PER_DAY, TimeUnit.MILLISECONDS);
+		    	
+		    	// Host Reporting
+		    	reportingTaskExecutor.scheduleAtFixedRate(new Runnable() {
+					@Override
+					public void run() {
+						Calendar cal = Calendar.getInstance();
+						cal.add(Calendar.DAY_OF_MONTH, -1);
 						
-						// Delete old statistics data
-						session.delete("Scouter.deleteHostAgent", getDateParm(cal));
-					} catch (Exception e) {
-						Logger.printStackTrace(e);
-					} finally {
-						if (session != null) {
-							session.close();
-						}
-					}
-					
-					// Host Reporting (Monthly)
-					cal = Calendar.getInstance();
-					if (cal.get(Calendar.DAY_OF_MONTH) == 1 || forceMonthlyReport) {
-						try {
-							cal.add(Calendar.MONTH, -1);
-					    	Logger.println("[SCOUTER-X] Start Monthly Host Report.");
-							report.createExcel(cal.get(Calendar.YEAR), cal.get(Calendar.MONTH) + 1);
-						} catch (Exception e) {
-							Logger.printStackTrace(e);
-						}
-			    	}
-				}
-	    	}, 
-	    	initialDelay + 5000, DateUtil.MILLIS_PER_DAY, TimeUnit.MILLISECONDS);
-	    	
-	    	// Java Reporting
-	    	reportingTaskExecutor.scheduleAtFixedRate(new Runnable() {
-				@Override
-				public void run() {
-					Calendar cal = Calendar.getInstance();
-					cal.add(Calendar.DAY_OF_MONTH, -1);
-					
-					AbstractReport report = new JavaReport();
-					
-					// Java Reporting (Dayily)
-					SqlSession session = sqlSessionFactory.openSession(true);
-					try {
-				    	Logger.println("[SCOUTER-X] Start Daily Java Report.");
-						report.createExcel(cal.get(Calendar.YEAR), cal.get(Calendar.MONTH) + 1, cal.get(Calendar.DAY_OF_MONTH));
+						AbstractReport report = new HostReport();
 						
-						// Delete old statistics data
-						session.delete("Scouter.deleteJavaAgent", getDateParm(cal));
-					} catch (Exception e) {
-						Logger.printStackTrace(e);
-					} finally {
-						if (session != null) {
-							session.close();
-						}
-					}
-					
-					// Java Reporting (Monthly)
-					cal = Calendar.getInstance();
-					if (cal.get(Calendar.DAY_OF_MONTH) == 1 || forceMonthlyReport) {
+						// Host Reporting (Dayily)
+						SqlSession session = sqlSessionFactory.openSession(true);
 						try {
-							cal.add(Calendar.MONTH, -1);
-					    	Logger.println("[SCOUTER-X] Start Monthly Java Report.");
-							report.createExcel(cal.get(Calendar.YEAR), cal.get(Calendar.MONTH) + 1);
+					    	Logger.println("[SCOUTER-X] Start Daily Host Report.");
+							report.createExcel(cal.get(Calendar.YEAR), cal.get(Calendar.MONTH) + 1, cal.get(Calendar.DAY_OF_MONTH));
+							
+							// Delete old statistics data
+							session.delete("Scouter.deleteHostAgent", getDateParm(cal));
 						} catch (Exception e) {
 							Logger.printStackTrace(e);
+						} finally {
+							if (session != null) {
+								session.close();
+							}
 						}
-			    	}
-				}
-	    	}, 
-	    	initialDelay + 5000, DateUtil.MILLIS_PER_DAY, TimeUnit.MILLISECONDS);
-	    	
-	    	// Service Reporting
-	    	reportingTaskExecutor.scheduleAtFixedRate(new Runnable() {
-				@Override
-				public void run() {
-					Calendar cal = Calendar.getInstance();
-					cal.add(Calendar.DAY_OF_MONTH, -1);
-					
-					AbstractReport report = new ServiceReport();
-					
-					// Service Reporting (Dayily)
-					SqlSession session = sqlSessionFactory.openSession(true);
-					try {
-				    	Logger.println("[SCOUTER-X] Start Daily Service Report.");
-						report.createExcel(cal.get(Calendar.YEAR), cal.get(Calendar.MONTH) + 1, cal.get(Calendar.DAY_OF_MONTH));
 						
-						// Delete old statistics data
-						Map<String, Object> param = getDateParm(cal);
-						session.delete("Scouter.deleteSql", param);
-						session.delete("Scouter.deleteIpAddress", param);
-						session.delete("Scouter.deleteUserAgent", param);
-						session.delete("Scouter.deleteService", param);
-					} catch (Exception e) {
-						Logger.printStackTrace(e);
-					} finally {
-						if (session != null) {
-							session.close();
-						}
-					}					
-					
-					// Service Reporting (Monthly)
-					cal = Calendar.getInstance();
-					if (cal.get(Calendar.DAY_OF_MONTH) == 1 || forceMonthlyReport) {
+						// Host Reporting (Monthly)
+						cal = Calendar.getInstance();
+						if (cal.get(Calendar.DAY_OF_MONTH) == 1 || forceMonthlyReport) {
+							try {
+								cal.add(Calendar.MONTH, -1);
+						    	Logger.println("[SCOUTER-X] Start Monthly Host Report.");
+								report.createExcel(cal.get(Calendar.YEAR), cal.get(Calendar.MONTH) + 1);
+							} catch (Exception e) {
+								Logger.printStackTrace(e);
+							}
+				    	}
+					}
+		    	}, 
+		    	initialDelay + 5000, DateUtil.MILLIS_PER_DAY, TimeUnit.MILLISECONDS);
+		    	
+		    	// Java Reporting
+		    	reportingTaskExecutor.scheduleAtFixedRate(new Runnable() {
+					@Override
+					public void run() {
+						Calendar cal = Calendar.getInstance();
+						cal.add(Calendar.DAY_OF_MONTH, -1);
+						
+						AbstractReport report = new JavaReport();
+						
+						// Java Reporting (Dayily)
+						SqlSession session = sqlSessionFactory.openSession(true);
 						try {
-							cal.add(Calendar.MONTH, -1);
-					    	Logger.println("[SCOUTER-X] Start Monthly Service Report.");
-							report.createExcel(cal.get(Calendar.YEAR), cal.get(Calendar.MONTH) + 1);
+					    	Logger.println("[SCOUTER-X] Start Daily Java Report.");
+							report.createExcel(cal.get(Calendar.YEAR), cal.get(Calendar.MONTH) + 1, cal.get(Calendar.DAY_OF_MONTH));
+							
+							// Delete old statistics data
+							session.delete("Scouter.deleteJavaAgent", getDateParm(cal));
 						} catch (Exception e) {
 							Logger.printStackTrace(e);
+						} finally {
+							if (session != null) {
+								session.close();
+							}
 						}
-			    	}
-				}
-	    	}, 
-	    	initialDelay + 5000, DateUtil.MILLIS_PER_DAY, TimeUnit.MILLISECONDS);
-	    	
-	    	// Application Operation Reporting
-	    	reportingTaskExecutor.scheduleAtFixedRate(new Runnable() {
-				@Override
-				public void run() {
-					Calendar cal = Calendar.getInstance();
-					cal.add(Calendar.MONTH, -1);
-					
-					OperationReport report = new OperationReport();
-					
-					// Application Operation Reporting (Monthly)
-					if (cal.get(Calendar.DAY_OF_MONTH) == 1 || forceMonthlyReport) {
+						
+						// Java Reporting (Monthly)
+						cal = Calendar.getInstance();
+						if (cal.get(Calendar.DAY_OF_MONTH) == 1 || forceMonthlyReport) {
+							try {
+								cal.add(Calendar.MONTH, -1);
+						    	Logger.println("[SCOUTER-X] Start Monthly Java Report.");
+								report.createExcel(cal.get(Calendar.YEAR), cal.get(Calendar.MONTH) + 1);
+							} catch (Exception e) {
+								Logger.printStackTrace(e);
+							}
+				    	}
+					}
+		    	}, 
+		    	initialDelay + 5000, DateUtil.MILLIS_PER_DAY, TimeUnit.MILLISECONDS);
+		    	
+		    	// Service Reporting
+		    	reportingTaskExecutor.scheduleAtFixedRate(new Runnable() {
+					@Override
+					public void run() {
+						Calendar cal = Calendar.getInstance();
+						cal.add(Calendar.DAY_OF_MONTH, -1);
+						
+						AbstractReport report = new ServiceReport();
+						
+						// Service Reporting (Dayily)
+						SqlSession session = sqlSessionFactory.openSession(true);
 						try {
-					    	Logger.println("[SCOUTER-X] Start Monthly Application Operation Report.");
-							report.createExcel(cal.get(Calendar.YEAR), cal.get(Calendar.MONTH) + 1);
+					    	Logger.println("[SCOUTER-X] Start Daily Service Report.");
+							report.createExcel(cal.get(Calendar.YEAR), cal.get(Calendar.MONTH) + 1, cal.get(Calendar.DAY_OF_MONTH));
+							
+							// Delete old statistics data
+							Map<String, Object> param = getDateParm(cal);
+							session.delete("Scouter.deleteSql", param);
+							session.delete("Scouter.deleteIpAddress", param);
+							session.delete("Scouter.deleteUserAgent", param);
+							session.delete("Scouter.deleteService", param);
 						} catch (Exception e) {
 							Logger.printStackTrace(e);
-						}
-			    	}
-				}
-	    	}, 
-	    	initialDelay + 5000, DateUtil.MILLIS_PER_DAY, TimeUnit.MILLISECONDS);
+						} finally {
+							if (session != null) {
+								session.close();
+							}
+						}					
+						
+						// Service Reporting (Monthly)
+						cal = Calendar.getInstance();
+						if (cal.get(Calendar.DAY_OF_MONTH) == 1 || forceMonthlyReport) {
+							try {
+								cal.add(Calendar.MONTH, -1);
+						    	Logger.println("[SCOUTER-X] Start Monthly Service Report.");
+								report.createExcel(cal.get(Calendar.YEAR), cal.get(Calendar.MONTH) + 1);
+							} catch (Exception e) {
+								Logger.printStackTrace(e);
+							}
+				    	}
+					}
+		    	}, 
+		    	initialDelay + 5000, DateUtil.MILLIS_PER_DAY, TimeUnit.MILLISECONDS);
+		    	
+		    	// Application Operation Reporting
+		    	reportingTaskExecutor.scheduleAtFixedRate(new Runnable() {
+					@Override
+					public void run() {
+						Calendar cal = Calendar.getInstance();
+						cal.add(Calendar.MONTH, -1);
+						
+						OperationReport report = new OperationReport();
+						
+						// Application Operation Reporting (Monthly)
+						if (cal.get(Calendar.DAY_OF_MONTH) == 1 || forceMonthlyReport) {
+							try {
+						    	Logger.println("[SCOUTER-X] Start Monthly Application Operation Report.");
+								report.createExcel(cal.get(Calendar.YEAR), cal.get(Calendar.MONTH) + 1);
+							} catch (Exception e) {
+								Logger.printStackTrace(e);
+							}
+				    	}
+					}
+		    	}, 
+		    	initialDelay + 5000, DateUtil.MILLIS_PER_DAY, TimeUnit.MILLISECONDS);
+	    	}
     	} else {
     		while (true) {
     			if (server != null && sqlSessionFactory != null) {
@@ -669,7 +671,11 @@ public class ReportingPlugin {
         }
         
         if (objType != null) {
-        	objFamily = CounterManager.getInstance().getCounterEngine().getObjectType(objType).getFamily().getName();
+			try {
+				objFamily = CounterManager.getInstance().getCounterEngine().getObjectType(objType).getFamily().getName();
+			} catch (Exception e) {
+				objFamily = objType;
+			}
         }
         
         // objFamily가 host인 경우
@@ -768,7 +774,14 @@ public class ReportingPlugin {
 				agentInfo.setObject_type(pack.objType);
 				
 				if (pack.objType != null) {
-	            	String object_family = CounterManager.getInstance().getCounterEngine().getObjectType(pack.objType).getFamily().getName();
+	            	String object_family;
+	            	
+					try {
+						object_family = CounterManager.getInstance().getCounterEngine().getObjectType(pack.objType).getFamily().getName();
+					} catch (Exception e) {
+						object_family = pack.objType;
+					}
+					
 	            	agentInfo.setObject_family(object_family);
 	            }
 				
