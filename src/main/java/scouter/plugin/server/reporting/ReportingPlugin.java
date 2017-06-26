@@ -1,5 +1,6 @@
 package scouter.plugin.server.reporting;
 
+import java.io.FileInputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.net.InetAddress;
@@ -12,6 +13,7 @@ import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -954,7 +956,15 @@ public class ReportingPlugin {
     
     public synchronized static SqlSessionFactory getSqlSessionFactory() {
     	if (sqlSessionFactory == null) {
-    		SqlSessionFactory factory = new SqlSessionFactoryBuilder().build(ReportingPlugin.class.getResourceAsStream("/mybatis-config.xml"));
+    		Properties properties = new Properties();
+    		
+    		try {
+				properties.load(new FileInputStream(System.getProperty("user.dir") + "/config.properties"));
+			} catch (Exception e) {
+			}
+    		
+    		SqlSessionFactory factory = new SqlSessionFactoryBuilder().build(ReportingPlugin.class.getResourceAsStream("/mybatis-config.xml"), properties);
+    		
     		return factory;
     	}
     	

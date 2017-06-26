@@ -3,16 +3,21 @@
   PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
   "http://mybatis.org/dtd/mybatis-3-config.dtd">
 <configuration>
+    <properties>
+        <property name="driver" value="org.apache.derby.jdbc.ClientDriver" />
+        <property name="url" value="jdbc:derby://localhost:1527/scouterDB;create=true" />
+        <!-- <property name="url" value="jdbc:derby://52.78.39.116:1527/scouterDB;create=true" /> -->
+        <property name="username" value="APP" />
+        <property name="password" value="APP" />
+    </properties>
     <environments default="development">
         <environment id="development">
             <transactionManager type="JDBC" />
             <dataSource type="POOLED">
-                <property name="driver" value="org.apache.derby.jdbc.ClientDriver" />
-                <property name="url" value="jdbc:derby://localhost:1527/scouterDB;create=true" />
-                <!-- <property name="url" value="jdbc:derby://52.78.39.116:1527/scouterDB;create=true" /> -->
-                <!-- <property name="url" value="jdbc:derby://localhost:1527/scouterDB;create=true" /> -->
-                <property name="username" value="APP" />
-                <property name="password" value="APP" />
+                <property name="driver" value="${driver}" />
+                <property name="url" value="${url}" />
+                <property name="username" value="${username}" />
+                <property name="password" value="${password}" />
                 <property name="poolMaximumActiveConnections" value="200"/>
 	            <property name="poolMaximumIdleConnections" value="100"/>
 	            <property name="poolMaximumCheckoutTime" value="20000"/>
