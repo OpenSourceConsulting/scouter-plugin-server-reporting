@@ -841,9 +841,14 @@ public class ReportingPlugin {
     					sqlInfo.setSql_hash(sqlHash);
     					sqlInfo.setSql_str(sqlStr);
     					session.insert("Scouter.insertSqlInfo", sqlInfo);
-    				} else if (sqlInfo.getSql_str().equals(sqlStr)) {
-    					sqlInfo.setSql_str(sqlStr);
-    					session.update("Scouter.updateSqlInfo", sqlInfo);
+    				} else {
+    					if (sqlInfo.getSql_str() == null) {
+        					sqlInfo.setSql_str(sqlStr);
+        					session.update("Scouter.updateSqlInfo", sqlInfo);
+    					} else if (!sqlInfo.getSql_str().equals(sqlStr)) {
+        					sqlInfo.setSql_str(sqlStr);
+        					session.update("Scouter.updateSqlInfo", sqlInfo);
+    					}
     				}
     				
 					sql = new Sql();
