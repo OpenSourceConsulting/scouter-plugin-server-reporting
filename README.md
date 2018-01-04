@@ -9,11 +9,11 @@
     - 일, 월별 각 애플리케이션 별 서비스에 대한 Elapsed Time, SQL Count, SQL Time, Request Count, Error Count, Elapsed Exceed Count 통계 정보
     - 월별 애플리케이션 운영 현황 (호출 빈도 Top 10 서비스, Worst 서비스)
 - Samples
-    - <a href="./documnet/sample/daily/alert_2017.12.31.xlsx">alert_2017.12.31.xlsx</a>, <a href="./documnet/sample/monthly/alert_2017.12.xlsx">alert_2017.12.xlsx</a>
-    - <a href="./documnet/sample/daily/host_2017.12.31.xlsx">host_2017.12.31.xlsx</a>, <a href="./documnet/sample/monthly/host_2017.12.xlsx">host_2017.12.xlsx</a>
-    - <a href="./documnet/sample/daily/java_2017.12.31.xlsx">java_2017.12.31.xlsx</a>, <a href="./documnet/sample/monthly/java_2017.12.xlsx">java_2017.12.xlsx</a>
-    - <a href="./documnet/sample/daily/service_2017.12.31.xlsx">service_2017.12.31.xlsx</a>, <a href="./documnet/sample/monthly/service_2017.12.xlsx">service_2017.12.xlsx</a>
-    - <a href="./documnet/sample/daily/operation_2017.12.xlsx">operation_2017.12.xlsx</a>
+    - <a href="https://view.officeapps.live.com/op/view.aspx?src=https://github.com/OpenSourceConsulting/scouter-plugin-server-reporting/blob/master/documnet/sample/daily/alert_2017.12.31.xlsx?raw=true">alert_2017.12.31.xlsx</a>, <a href="https://view.officeapps.live.com/op/view.aspx?src=https://github.com/OpenSourceConsulting/scouter-plugin-server-reporting/blob/master/documnet/sample/monthly/alert_2017.12.xlsx?raw=true">alert_2017.12.xlsx</a>
+    - <a href="https://view.officeapps.live.com/op/view.aspx?src=https://github.com/OpenSourceConsulting/scouter-plugin-server-reporting/blob/master/documnet/sample/daily/host_2017.12.31.xlsx?raw=true">host_2017.12.31.xlsx</a>, <a href="https://view.officeapps.live.com/op/view.aspx?src=https://github.com/OpenSourceConsulting/scouter-plugin-server-reporting/blob/master/documnet/sample/monthly/host_2017.12.xlsx?raw=true">host_2017.12.xlsx</a>
+    - <a href="https://view.officeapps.live.com/op/view.aspx?src=https://github.com/OpenSourceConsulting/scouter-plugin-server-reporting/blob/master/documnet/sample/daily/java_2017.12.31.xlsx?raw=true">java_2017.12.31.xlsx</a>, <a href="https://view.officeapps.live.com/op/view.aspx?src=https://github.com/OpenSourceConsulting/scouter-plugin-server-reporting/blob/master/documnet/sample/monthly/java_2017.12.xlsx?raw=true">java_2017.12.xlsx</a>
+    - <a href="https://view.officeapps.live.com/op/view.aspx?src=https://github.com/OpenSourceConsulting/scouter-plugin-server-reporting/blob/master/documnet/sample/daily/service_2017.12.31.xlsx?raw=true">service_2017.12.31.xlsx</a>, <a href="https://view.officeapps.live.com/op/view.aspx?src=https://github.com/OpenSourceConsulting/scouter-plugin-server-reporting/blob/master/documnet/sample/monthly/service_2017.12.xlsx?raw=true">service_2017.12.xlsx</a>
+    - <a href="https://view.officeapps.live.com/op/view.aspx?src=https://github.com/OpenSourceConsulting/scouter-plugin-server-reporting/blob/master/documnet/sample/monthly/operation_2017.12.xlsx?raw=true">operation_2017.12.xlsx</a>
 
 ### Properties (스카우터 서버 설치 경로 하위의 conf/scouter.conf)
 * **_ext\_plugin\_reporting\_logging\_enabled_** : 로깅 여부 - 기본 값은 false
