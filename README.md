@@ -59,6 +59,9 @@ ext_plugin_reporting_application_name=osc-portal
     - 디펜던시 라이브러리와 함께 scouter-plugin-server-reporting-x.x.x.jar 파일을 복사하여 스카우터 서버 설치 경로 하위의 lib/ 폴더에 저장한다.
     
 ## Appendix
+##### 필수 사항 #####
+* 자바 에이전트의 obj_name은 반드시 설정해야 하며, 이중화 환경에서 오브젝트 명을 기준으로 그룹핑하여 서비스 통계정보를 레포팅 하기 위해 scouter-01, scouter-02와 같이 이름에 '-' 가 포함되어야 한다.
+
 ##### 일/월별 수동 레포팅 파일 생성 #####
 * java -cp .:/opt/apm/scouter/server/lib/* scouter.plugin.server.reporting.ReportingPlugin {yyyymmdd or yyyymm}
 
