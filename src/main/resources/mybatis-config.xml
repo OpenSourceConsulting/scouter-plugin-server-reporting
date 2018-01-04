@@ -6,7 +6,6 @@
     <properties>
         <property name="driver" value="org.apache.derby.jdbc.ClientDriver" />
         <property name="url" value="jdbc:derby://localhost:1527/scouterDB;create=true" />
-        <!-- <property name="url" value="jdbc:derby://52.78.39.116:1527/scouterDB;create=true" /> -->
         <property name="username" value="APP" />
         <property name="password" value="APP" />
     </properties>
