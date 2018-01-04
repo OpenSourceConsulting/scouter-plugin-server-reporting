@@ -21,7 +21,7 @@
 * **_ext\_plugin\_reporting\_max\_elapsed\_time_** : 서비스에 대한 허용 가능한 응답시간(ms) - 기본 값은 5000
 * **_ext\_plugin\_reporting\_output\_dir_** : 레포팅 파일 저장 경로 - 기본 값은 {user.home}/scouter 
 * **_ext\_plugin\_reporting\_application\_name_** : 운영 현황 레포트에 포함될 애플리케이션 명
-* **_ext\_plugin\_reporting\_excel\_report_** : 스케쥴에 의한 일, 월별 엑셀 레포트 파일 생셩 여부 - 기본 값은 true
+* **_ext\_plugin\_reporting\_excel\_export_** : 스케쥴에 의한 일, 월별 엑셀 레포트 파일 생셩 여부 - 기본 값은 true
 
 * Example
 ```
