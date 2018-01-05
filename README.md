@@ -9,11 +9,11 @@
     - 일, 월별 각 애플리케이션 별 서비스에 대한 Elapsed Time, SQL Count, SQL Time, Request Count, Error Count, Elapsed Exceed Count 통계 정보
     - 월별 애플리케이션 운영 현황 (호출 빈도 Top 10 서비스, Worst 서비스)
 - Samples
-    - <a href="https://view.officeapps.live.com/op/view.aspx?src=https://github.com/OpenSourceConsulting/scouter-plugin-server-reporting/blob/master/documnet/sample/daily/alert_2017.12.31.xlsx?raw=true">alert_2017.12.31.xlsx</a>, <a href="https://view.officeapps.live.com/op/view.aspx?src=https://github.com/OpenSourceConsulting/scouter-plugin-server-reporting/blob/master/documnet/sample/monthly/alert_2017.12.xlsx?raw=true">alert_2017.12.xlsx</a>
-    - <a href="https://view.officeapps.live.com/op/view.aspx?src=https://github.com/OpenSourceConsulting/scouter-plugin-server-reporting/blob/master/documnet/sample/daily/host_2017.12.31.xlsx?raw=true">host_2017.12.31.xlsx</a>, <a href="https://view.officeapps.live.com/op/view.aspx?src=https://github.com/OpenSourceConsulting/scouter-plugin-server-reporting/blob/master/documnet/sample/monthly/host_2017.12.xlsx?raw=true">host_2017.12.xlsx</a>
-    - <a href="https://view.officeapps.live.com/op/view.aspx?src=https://github.com/OpenSourceConsulting/scouter-plugin-server-reporting/blob/master/documnet/sample/daily/java_2017.12.31.xlsx?raw=true">java_2017.12.31.xlsx</a>, <a href="https://view.officeapps.live.com/op/view.aspx?src=https://github.com/OpenSourceConsulting/scouter-plugin-server-reporting/blob/master/documnet/sample/monthly/java_2017.12.xlsx?raw=true">java_2017.12.xlsx</a>
-    - <a href="https://view.officeapps.live.com/op/view.aspx?src=https://github.com/OpenSourceConsulting/scouter-plugin-server-reporting/blob/master/documnet/sample/daily/service_2017.12.31.xlsx?raw=true">service_2017.12.31.xlsx</a>, <a href="https://view.officeapps.live.com/op/view.aspx?src=https://github.com/OpenSourceConsulting/scouter-plugin-server-reporting/blob/master/documnet/sample/monthly/service_2017.12.xlsx?raw=true">service_2017.12.xlsx</a>
-    - <a href="https://view.officeapps.live.com/op/view.aspx?src=https://github.com/OpenSourceConsulting/scouter-plugin-server-reporting/blob/master/documnet/sample/monthly/operation_2017.12.xlsx?raw=true">operation_2017.12.xlsx</a>
+    - <a href="https://view.officeapps.live.com/op/view.aspx?src=https://github.com/OpenSourceConsulting/scouter-plugin-server-reporting/blob/master/document/sample/daily/alert_2017.12.31.xlsx?raw=true">alert_2017.12.31.xlsx</a>, <a href="https://view.officeapps.live.com/op/view.aspx?src=https://github.com/OpenSourceConsulting/scouter-plugin-server-reporting/blob/master/document/sample/monthly/alert_2017.12.xlsx?raw=true">alert_2017.12.xlsx</a>
+    - <a href="https://view.officeapps.live.com/op/view.aspx?src=https://github.com/OpenSourceConsulting/scouter-plugin-server-reporting/blob/master/document/sample/daily/host_2017.12.31.xlsx?raw=true">host_2017.12.31.xlsx</a>, <a href="https://view.officeapps.live.com/op/view.aspx?src=https://github.com/OpenSourceConsulting/scouter-plugin-server-reporting/blob/master/document/sample/monthly/host_2017.12.xlsx?raw=true">host_2017.12.xlsx</a>
+    - <a href="https://view.officeapps.live.com/op/view.aspx?src=https://github.com/OpenSourceConsulting/scouter-plugin-server-reporting/blob/master/document/sample/daily/java_2017.12.31.xlsx?raw=true">java_2017.12.31.xlsx</a>, <a href="https://view.officeapps.live.com/op/view.aspx?src=https://github.com/OpenSourceConsulting/scouter-plugin-server-reporting/blob/master/document/sample/monthly/java_2017.12.xlsx?raw=true">java_2017.12.xlsx</a>
+    - <a href="https://view.officeapps.live.com/op/view.aspx?src=https://github.com/OpenSourceConsulting/scouter-plugin-server-reporting/blob/master/document/sample/daily/service_2017.12.31.xlsx?raw=true">service_2017.12.31.xlsx</a>, <a href="https://view.officeapps.live.com/op/view.aspx?src=https://github.com/OpenSourceConsulting/scouter-plugin-server-reporting/blob/master/document/sample/monthly/service_2017.12.xlsx?raw=true">service_2017.12.xlsx</a>
+    - <a href="https://view.officeapps.live.com/op/view.aspx?src=https://github.com/OpenSourceConsulting/scouter-plugin-server-reporting/blob/master/document/sample/monthly/operation_2017.12.xlsx?raw=true">operation_2017.12.xlsx</a>
 
 ### Properties (스카우터 서버 설치 경로 하위의 conf/scouter.conf)
 * **_ext\_plugin\_reporting\_logging\_enabled_** : 로깅 여부 - 기본 값은 false
@@ -68,7 +68,7 @@ ext_plugin_reporting_excel_export=true
 * java -cp .:/opt/apm/scouter/server/lib/* scouter.plugin.server.reporting.ReportingPlugin {yyyymmdd or yyyymm}
 
 ##### DB Schema #####
-><img src="./documnet/img/scouter_erd.png" width="700">
+><img src="./document/img/scouter_erd.png" width="700">
 
 ##### DB 저장 경로 변경 #####
 * 1. Symbolic Link를 사용한다.
@@ -81,7 +81,7 @@ ext_plugin_reporting_excel_export=true
 
 ##### 브라우저를 이용한 통계 레포팅 파일 조회 #####
 * Web Server를 사용하거나 AWS S3 버킷에 레포팅 파일을 저장할 경우 브라우저를 이용하여 레포팅 파일을 조회할 수 있다.
-><img src="./documnet/sample/web/web_01.png" width="700">
-><img src="./documnet/sample/web/web_02.png" width="700">
-><img src="./documnet/sample/web/web_03.png" width="700">
-><img src="./documnet/sample/web/web_04.png" width="700"> 
+><img src="./document/sample/web/web_01.png" width="700">
+><img src="./document/sample/web/web_02.png" width="700">
+><img src="./document/sample/web/web_03.png" width="700">
+><img src="./document/sample/web/web_04.png" width="700"> 
