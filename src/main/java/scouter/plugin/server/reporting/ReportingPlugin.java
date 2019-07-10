@@ -93,9 +93,11 @@ public class ReportingPlugin {
 	    		// ======================================================================
 	    		// TODO 두 개 이상의 Collector Server에 대한 고려. (데이터 수집은 한군데에서 할 경우)
 	    		// ======================================================================
+
+				int port = conf.getInt("ext_plugin_reporting_derby_port", 1527);
 	    		
 	    		// Derby running as client/server mode
-	    		server = new NetworkServerControl(InetAddress.getByName("0.0.0.0"), 1527);
+	    		server = new NetworkServerControl(InetAddress.getByName("0.0.0.0"), port);
 				server.start(writer);
 				
 				Logger.println("[SCOUTER-X] 1. Derby server launched.");
